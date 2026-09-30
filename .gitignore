@@ -1,0 +1,57 @@
+# Python virtual env
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data - exclude large raw data files
+data/raw/*.json
+data/raw/*.csv
+data/raw/*.zip
+data/processed/*.pkl
+data/processed/*.parquet
+
+# ML models (large binary files)
+backend/trained_models/*.pkl
+backend/trained_models/*.joblib
+
+# Results
+results/figures/*.png
+
+# SQLite database
+backend/*.db
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
