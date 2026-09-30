@@ -11,8 +11,8 @@ A complete analytical application to detect bot-like behaviour in social media n
 | Phase | Description | Status |
 | :--- | :--- | :---: |
 | Phase 0 | Project Planning | ✅ |
-| Phase 1 | Project Foundation | 🔄 In Progress |
-| Phase 2 | Data Preprocessing & EDA | ⏳ |
+| Phase 1 | Project Foundation | ✅ |
+| Phase 2 | Data Preprocessing & EDA | ✅ |
 | Phase 3 | Feature Engineering & Behaviour Analytics | ⏳ |
 | Phase 4 | Machine Learning Pipeline | ⏳ |
 | Phase 5 | NLP & Network Analysis | ⏳ |

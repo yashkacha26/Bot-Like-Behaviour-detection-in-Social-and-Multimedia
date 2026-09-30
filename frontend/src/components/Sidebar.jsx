@@ -7,10 +7,11 @@ import {
   Network,
   BrainCircuit,
   Search,
+  HeartPulse,
 } from 'lucide-react'
 
 const navItems = [
-  { id: 'dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
+  { id: 'dashboard',   label: 'Dashboard',            icon: LayoutDashboard },
   { id: 'dataset',     label: 'Dataset Explorer',     icon: Database },
   { id: 'behaviour',   label: 'Behaviour Analytics',  icon: BarChart2 },
   { id: 'nlp',         label: 'NLP Analysis',         icon: MessageSquare },
@@ -23,8 +24,8 @@ export default function Sidebar({ activePage, onNavigate }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__logo">
-        <div className="sidebar__logo-title">🤖 Bot Detection</div>
-        <div className="sidebar__logo-subtitle">SMA Analytics · Phase 1</div>
+        <div className="sidebar__logo-title">Bot Detection</div>
+        <div className="sidebar__logo-subtitle">SMA Analytics v0.2</div>
       </div>
 
       <nav className="sidebar__nav" aria-label="Main navigation">
@@ -41,6 +42,19 @@ export default function Sidebar({ activePage, onNavigate }) {
           </button>
         ))}
       </nav>
+
+      {/* Backend status shortcut at the bottom */}
+      <div style={{ padding: '16px 12px', borderTop: '1px solid var(--color-border)' }}>
+        <button
+          id="nav-health"
+          className={`nav-item${activePage === 'health' ? ' active' : ''}`}
+          onClick={() => onNavigate('health')}
+          style={{ width: '100%' }}
+        >
+          <HeartPulse size={16} aria-hidden="true" />
+          Backend Status
+        </button>
+      </div>
     </aside>
   )
 }

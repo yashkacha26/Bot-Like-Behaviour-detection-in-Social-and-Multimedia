@@ -36,3 +36,25 @@ The dataset provides a binary classification label for each user:
 ## Assumptions
 *   We do not invent missing columns, labels, or network relationships.
 *   Our pipeline will gracefully handle the data as it is strictly provided in the benchmark format.
+
+---
+
+## Phase 2 Status
+
+The TwiBot-20 **public sample** (100 accounts) contains **no label field** — it cannot be used for supervised classification. The full dataset (with labels) requires a research access request from the authors.
+
+**Decision (Phase 2):** A realistic demo dataset (`data/raw/twibot20_demo.json`) is auto-generated using the exact TwiBot-20 JSON schema and statistically-motivated distributions published in the TwiBot-20 paper. This is clearly marked as demo data throughout the application.
+
+**To switch to real data:** Place the full TwiBot-20 dataset (with `label` field per entry) at:
+```
+data/raw/TwiBot-20_sample.json
+```
+The application will automatically detect it and switch to using real data — no code changes needed.
+
+**Demo dataset characteristics:**
+- 500 accounts (300 human, 200 bot)
+- Exact TwiBot-20 profile schema
+- Statistically realistic distributions for followers, friends, statuses, account age
+- Text data (tweets) and network data (neighbors) included
+- Binary labels: `"bot"` / `"human"`
+
