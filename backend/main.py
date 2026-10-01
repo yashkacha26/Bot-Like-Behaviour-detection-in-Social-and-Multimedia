@@ -495,3 +495,62 @@ def dashboard_summary():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# Phase 7 — Account Investigation
+# ─────────────────────────────────────────────
+from account_investigation import (
+    get_account_list,
+    get_account_detail,
+    get_search_suggestions,
+    get_investigation_stats,
+    invalidate_investigation_cache,
+)
+
+
+@app.get("/api/investigate/stats")
+def investigate_stats():
+    """Phase 7 — Overview counts: total, labeled, bot, human, high-risk, moderate-risk."""
+    try:
+        return get_investigation_stats()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/investigate/accounts")
+def investigate_accounts(
+    page: int = 1,
+    page_size: int = 50,
+    label: str = "all",
+    sort_by: str = "suspicion_score",
+):
+    """Phase 7 — Paginated account list. Filter by label, sort by any numeric feature."""
+    try:
+        return get_account_list(page=page, page_size=min(page_size, 100),
+                                label_filter=label, sort_by=sort_by)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/investigate/account")
+def investigate_account(query: str):
+    """Phase 7 — Full investigation report for a single account (user_id or screen_name)."""
+    try:
+        result = get_account_detail(query)
+        if not result.get("found"):
+            raise HTTPException(status_code=404, detail=f"Account not found: {query}")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/investigate/search")
+def investigate_search(q: str, n: int = 10):
+    """Phase 7 — Search accounts by screen_name or name (autocomplete)."""
+    try:
+        return get_search_suggestions(query=q, n=min(n, 20))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -17,8 +17,8 @@ A complete analytical application to detect bot-like behaviour in social media n
 | Phase 4 | Machine Learning Pipeline | ✅ |
 | Phase 5 | NLP & Network Analysis | ✅ |
 | Phase 6 | Dashboard & Frontend Integration | ✅ |
-| Phase 7 | Account Investigation | ⏳ |
-| Phase 8 | Testing & Documentation | ⏳ |
+| Phase 7 | Account Investigation | ✅ |
+| Phase 8 | Testing & Documentation | ✅ |
 
 ---
 
@@ -84,10 +84,18 @@ Open [http://localhost:5173](http://localhost:5173)
 | `GET /api/network/metrics` | Per-node degree & PageRank |
 | `GET /api/network/label-metrics` | Avg metrics per label |
 
-### Phase 6 — Dashboard
+### Phase 7 — Account Investigation
 | Endpoint | Description |
 | :--- | :--- |
-| `GET /api/dashboard/summary` | Aggregated overview stats |
+| `GET /api/investigate/stats` | Risk tier counts |
+| `GET /api/investigate/accounts` | Paginated account list (filter + sort) |
+| `GET /api/investigate/account?query=` | Full per-account report + ML prediction |
+| `GET /api/investigate/search?q=` | Autocomplete search |
+
+### Phase 8 — Testing & Documentation
+See [`docs/TESTING.md`](docs/TESTING.md) — 89 tests across 6 test files.
+See [`docs/API.md`](docs/API.md) — full API reference.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design.
 
 ---
 
