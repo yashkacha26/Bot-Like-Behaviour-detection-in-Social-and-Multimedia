@@ -1,6 +1,6 @@
 """
 Bot-Like Behaviour Detection — FastAPI Backend
-Phase 1 + Phase 2 + Phase 3
+Phase 1 + Phase 2 + Phase 3 + Phase 4 (ML) + Phase 5 (NLP + Network)
 """
 
 import sqlite3
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Bot-Like Behaviour Detection API",
     description="Backend API for detecting bot-like behaviour in social media networks.",
-    version="0.2.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -77,7 +77,7 @@ def health_check():
     return {
         "status": "ok",
         "message": "Backend connected successfully.",
-        "api_version": "0.2.0",
+        "api_version": "0.4.0",
         "database": db_status,
     }
 
@@ -266,3 +266,232 @@ def behaviour_scatter(x: str = "ff_ratio", y: str = "tweets_per_day", max_points
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ─────────────────────────────────────────────
+# Phase 4 — Machine Learning Pipeline
+# ─────────────────────────────────────────────
+from ml_pipeline import (
+    get_ml_status,
+    get_ml_train,
+    get_ml_metrics,
+    get_ml_feature_importance,
+    get_ml_confusion_matrix,
+    get_ml_roc,
+    get_ml_all_roc,
+    invalidate_ml_cache,
+)
+
+
+@app.get("/api/ml/status")
+def ml_status():
+    """Phase 4 — Check whether models have been trained."""
+    try:
+        return get_ml_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ml/train")
+def ml_train():
+    """Phase 4 — Train (or re-use cached) Logistic Regression, Decision Tree, and Random Forest models."""
+    try:
+        return get_ml_train()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ml/metrics")
+def ml_metrics():
+    """Phase 4 — Per-model CV and hold-out metrics (accuracy, precision, recall, F1, ROC-AUC)."""
+    try:
+        return get_ml_metrics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ml/feature-importance")
+def ml_feature_importance(model: str = "Random Forest"):
+    """Phase 4 — Feature importances for the given model (default: Random Forest)."""
+    try:
+        return get_ml_feature_importance(model_name=model)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ml/confusion-matrix")
+def ml_confusion_matrix(model: str = "Random Forest"):
+    """Phase 4 — Confusion matrix for the given model on hold-out test set."""
+    try:
+        return get_ml_confusion_matrix(model_name=model)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ml/roc")
+def ml_roc(model: str = "Random Forest"):
+    """Phase 4 — ROC curve data (fpr, tpr, auc) for a single model."""
+    try:
+        return get_ml_roc(model_name=model)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ml/roc-all")
+def ml_roc_all():
+    """Phase 4 — ROC curve data for all three models (for overlay chart)."""
+    try:
+        return get_ml_all_roc()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# Phase 5 — NLP Analysis
+# ─────────────────────────────────────────────
+from nlp_analysis import (
+    get_nlp_sentiment,
+    get_nlp_tfidf,
+    get_nlp_word_frequency,
+    invalidate_nlp_cache,
+)
+
+
+@app.get("/api/nlp/sentiment")
+def nlp_sentiment():
+    """Phase 5 — VADER sentiment scores (compound, pos, neu, neg) for bot vs human tweets."""
+    try:
+        return get_nlp_sentiment()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/nlp/tfidf")
+def nlp_tfidf(top_n: int = 20):
+    """Phase 5 — Top TF-IDF tokens (unigrams + bigrams) for bot vs human."""
+    try:
+        return get_nlp_tfidf(top_n=min(top_n, 50))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/nlp/word-frequency")
+def nlp_word_frequency(top_n: int = 30):
+    """Phase 5 — Word frequency counts for bot vs human tweet corpus."""
+    try:
+        return get_nlp_word_frequency(top_n=min(top_n, 50))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# Phase 5 — Network Analysis
+# ─────────────────────────────────────────────
+from network_analysis import (
+    get_network_summary,
+    get_network_metrics,
+    get_network_degree_distribution,
+    get_network_top_pagerank,
+    get_network_label_metrics,
+    invalidate_network_cache,
+)
+
+
+@app.get("/api/network/summary")
+def network_summary():
+    """Phase 5 — Graph summary: node count, edge count, density, avg degree."""
+    try:
+        return get_network_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/network/metrics")
+def network_metrics(top_n: int = 30):
+    """Phase 5 — Per-node metrics: degree, PageRank, in/out-degree, label."""
+    try:
+        return get_network_metrics(top_n=min(top_n, 100))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/network/degree-distribution")
+def network_degree_distribution():
+    """Phase 5 — Degree distribution histogram split by bot vs human."""
+    try:
+        return get_network_degree_distribution()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/network/top-pagerank")
+def network_top_pagerank(n: int = 20):
+    """Phase 5 — Top-n nodes by PageRank score."""
+    try:
+        return get_network_top_pagerank(n=min(n, 50))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/network/label-metrics")
+def network_label_metrics():
+    """Phase 5 — Average degree / PageRank grouped by label (bot vs human)."""
+    try:
+        return get_network_label_metrics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# Phase 6 — Dashboard summary endpoint
+# ─────────────────────────────────────────────
+@app.get("/api/dashboard/summary")
+def dashboard_summary():
+    """Phase 6 — Aggregated stats for the Overview Dashboard."""
+    try:
+        from preprocessing import get_or_load
+        df, meta = get_or_load()
+        from feature_engineering import get_engineered_df
+        edf = get_engineered_df()
+        labeled = edf[edf["label"].isin(["bot", "human"])]
+        bot_count   = int((labeled["label"] == "bot").sum())
+        human_count = int((labeled["label"] == "human").sum())
+        total       = bot_count + human_count
+        bot_pct     = round(bot_count / total * 100, 1) if total else 0
+
+        avg_suspicion = round(float(labeled["suspicion_score"].mean()), 2) if len(labeled) else 0
+
+        # Best ML model
+        best_model = {"model": "N/A", "test_accuracy": 0, "test_f1": 0}
+        try:
+            metrics = get_ml_metrics()
+            if metrics:
+                best_model = max(metrics, key=lambda m: m["test_f1"])
+        except Exception:
+            pass
+
+        # Network summary
+        net = {"total_nodes": 0, "total_edges": 0}
+        try:
+            net = get_network_summary()
+        except Exception:
+            pass
+
+        return {
+            "total_accounts": total,
+            "bot_count":      bot_count,
+            "human_count":    human_count,
+            "bot_pct":        bot_pct,
+            "avg_suspicion_score": avg_suspicion,
+            "is_demo": not meta.get("is_real_dataset", False),
+            "best_model": {
+                "name":     best_model.get("model", "N/A"),
+                "accuracy": best_model.get("test_accuracy", 0),
+                "f1":       best_model.get("test_f1", 0),
+            },
+            "network": {
+                "nodes": net.get("total_nodes", 0),
+                "edges": net.get("total_edges", 0),
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

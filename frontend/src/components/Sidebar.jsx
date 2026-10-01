@@ -25,7 +25,7 @@ export default function Sidebar({ activePage, onNavigate }) {
     <aside className="sidebar">
       <div className="sidebar__logo">
         <div className="sidebar__logo-title">Bot Detection</div>
-        <div className="sidebar__logo-subtitle">SMA Analytics v0.3</div>
+        <div className="sidebar__logo-subtitle">SMA Analytics v0.4</div>
       </div>
 
       <nav className="sidebar__nav" aria-label="Main navigation">

@@ -14,15 +14,15 @@ A complete analytical application to detect bot-like behaviour in social media n
 | Phase 1 | Project Foundation | ✅ |
 | Phase 2 | Data Preprocessing & EDA | ✅ |
 | Phase 3 | Feature Engineering & Behaviour Analytics | ✅ |
-| Phase 4 | Machine Learning Pipeline | ⏳ |
-| Phase 5 | NLP & Network Analysis | ⏳ |
-| Phase 6 | Dashboard & Frontend Integration | ⏳ |
+| Phase 4 | Machine Learning Pipeline | ✅ |
+| Phase 5 | NLP & Network Analysis | ✅ |
+| Phase 6 | Dashboard & Frontend Integration | ✅ |
 | Phase 7 | Account Investigation | ⏳ |
 | Phase 8 | Testing & Documentation | ⏳ |
 
 ---
 
-## Quick Start (Phase 1)
+## Quick Start
 
 ### Backend
 ```bash
@@ -38,27 +38,56 @@ cd frontend
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). You should see:
-> **Backend connected successfully.**
+Open [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## Quick Start (Phase 3)
+## API Endpoints
 
-### New Backend Endpoints
+### Phase 1 — Health
 | Endpoint | Description |
 | :--- | :--- |
-| `GET /api/features/summary` | Engineered feature list & labeled account counts |
-| `GET /api/features/stats` | Per-feature bot vs human descriptive statistics |
-| `GET /api/behaviour/comparison` | Mean values across 10 metrics (chart-ready) |
-| `GET /api/behaviour/boolean-rates` | Boolean flag rates: bots vs humans |
-| `GET /api/behaviour/score-distributions` | Histogram of activity/suspicion scores |
-| `GET /api/behaviour/account-tiers` | Bot vs human per follower-tier bucket |
-| `GET /api/behaviour/top-suspicious` | Top-N accounts by suspicion score |
-| `GET /api/behaviour/scatter` | Scatter data for any two numeric features |
+| `GET /api/health` | Backend health check |
 
-### New Frontend Page
-Click **Behaviour Analytics** in the sidebar to view Phase 3 charts.
+### Phase 2 — Dataset
+| Endpoint | Description |
+| :--- | :--- |
+| `GET /api/dataset/summary` | Dataset overview |
+| `GET /api/dataset/columns` | Column metadata |
+| `GET /api/dataset/stats` | Descriptive statistics |
+| `POST /api/dataset/reload` | Force reload dataset |
+
+### Phase 3 — Behaviour Analytics
+| Endpoint | Description |
+| :--- | :--- |
+| `GET /api/features/summary` | Engineered feature list |
+| `GET /api/behaviour/comparison` | Bot vs human mean values |
+| `GET /api/behaviour/top-suspicious` | Top suspicious accounts |
+| `GET /api/behaviour/scatter` | Scatter data for any two features |
+
+### Phase 4 — Machine Learning
+| Endpoint | Description |
+| :--- | :--- |
+| `POST /api/ml/train` | Train LR / DT / RF models |
+| `GET /api/ml/metrics` | CV + hold-out metrics for all models |
+| `GET /api/ml/feature-importance` | Feature importance scores |
+| `GET /api/ml/confusion-matrix` | Confusion matrix |
+| `GET /api/ml/roc-all` | ROC curves for all models |
+
+### Phase 5 — NLP & Network
+| Endpoint | Description |
+| :--- | :--- |
+| `GET /api/nlp/sentiment` | VADER sentiment (bot vs human) |
+| `GET /api/nlp/tfidf` | TF-IDF top tokens |
+| `GET /api/nlp/word-frequency` | Word frequency counts |
+| `GET /api/network/summary` | Graph statistics |
+| `GET /api/network/metrics` | Per-node degree & PageRank |
+| `GET /api/network/label-metrics` | Avg metrics per label |
+
+### Phase 6 — Dashboard
+| Endpoint | Description |
+| :--- | :--- |
+| `GET /api/dashboard/summary` | Aggregated overview stats |
 
 ---
 
@@ -66,7 +95,7 @@ Click **Behaviour Analytics** in the sidebar to view Phase 3 charts.
 - **Frontend**: React, Vite, Tailwind CSS, Recharts, Axios, Lucide React
 - **Backend**: Python 3.11, FastAPI, Uvicorn
 - **Data / ML**: Pandas, NumPy, Scikit-learn, Joblib
-- **NLP**: NLTK, VADER, TF-IDF, WordCloud
+- **NLP**: NLTK, VADER, TF-IDF
 - **Network**: NetworkX
 - **Database**: SQLite
 
