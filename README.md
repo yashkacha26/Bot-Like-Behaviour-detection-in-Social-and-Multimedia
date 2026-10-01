@@ -13,7 +13,7 @@ A complete analytical application to detect bot-like behaviour in social media n
 | Phase 0 | Project Planning | ✅ |
 | Phase 1 | Project Foundation | ✅ |
 | Phase 2 | Data Preprocessing & EDA | ✅ |
-| Phase 3 | Feature Engineering & Behaviour Analytics | ⏳ |
+| Phase 3 | Feature Engineering & Behaviour Analytics | ✅ |
 | Phase 4 | Machine Learning Pipeline | ⏳ |
 | Phase 5 | NLP & Network Analysis | ⏳ |
 | Phase 6 | Dashboard & Frontend Integration | ⏳ |
@@ -40,6 +40,25 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). You should see:
 > **Backend connected successfully.**
+
+---
+
+## Quick Start (Phase 3)
+
+### New Backend Endpoints
+| Endpoint | Description |
+| :--- | :--- |
+| `GET /api/features/summary` | Engineered feature list & labeled account counts |
+| `GET /api/features/stats` | Per-feature bot vs human descriptive statistics |
+| `GET /api/behaviour/comparison` | Mean values across 10 metrics (chart-ready) |
+| `GET /api/behaviour/boolean-rates` | Boolean flag rates: bots vs humans |
+| `GET /api/behaviour/score-distributions` | Histogram of activity/suspicion scores |
+| `GET /api/behaviour/account-tiers` | Bot vs human per follower-tier bucket |
+| `GET /api/behaviour/top-suspicious` | Top-N accounts by suspicion score |
+| `GET /api/behaviour/scatter` | Scatter data for any two numeric features |
+
+### New Frontend Page
+Click **Behaviour Analytics** in the sidebar to view Phase 3 charts.
 
 ---
 

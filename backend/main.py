@@ -1,6 +1,6 @@
 """
 Bot-Like Behaviour Detection — FastAPI Backend
-Phase 1 + Phase 2
+Phase 1 + Phase 2 + Phase 3
 """
 
 import sqlite3
@@ -172,7 +172,97 @@ def dataset_stats():
 def dataset_reload():
     """Force-reload the dataset (clears the in-memory cache)."""
     try:
+        from feature_engineering import invalidate_cache
         df, meta = reload()
+        invalidate_cache()
         return {"status": "ok", "rows": len(df), "is_demo": not meta.get("is_real_dataset")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# Phase 3 — Feature Engineering & Behaviour Analytics
+# ─────────────────────────────────────────────
+from feature_engineering import (
+    get_feature_summary,
+    get_feature_stats,
+    get_behaviour_comparison,
+    get_boolean_feature_rates,
+    get_score_distributions,
+    get_account_tier_distribution,
+    get_top_suspicious_accounts,
+    get_scatter_data,
+)
+
+
+@app.get("/api/features/summary")
+def features_summary():
+    """Phase 3 — Overview of all engineered features and labeled account counts."""
+    try:
+        return get_feature_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/features/stats")
+def features_stats():
+    """Phase 3 — Descriptive statistics (mean, median, std, percentiles) per feature, split bot vs human."""
+    try:
+        return get_feature_stats()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/comparison")
+def behaviour_comparison():
+    """Phase 3 — Bot vs human mean values across 10 key metrics (chart-ready)."""
+    try:
+        return get_behaviour_comparison()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/boolean-rates")
+def behaviour_boolean_rates():
+    """Phase 3 — Percentage of bots vs humans with each boolean flag set to True."""
+    try:
+        return get_boolean_feature_rates()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/score-distributions")
+def behaviour_score_distributions():
+    """Phase 3 — Histogram distributions of activity_score and suspicion_score for bots vs humans."""
+    try:
+        return get_score_distributions()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/account-tiers")
+def behaviour_account_tiers():
+    """Phase 3 — Bot vs human count per follower-count tier (Nano/Micro/Mid/Macro/Mega)."""
+    try:
+        return get_account_tier_distribution()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/top-suspicious")
+def behaviour_top_suspicious(n: int = 20):
+    """Phase 3 — Top-n most suspicious accounts by composite suspicion score."""
+    try:
+        return get_top_suspicious_accounts(n=min(n, 50))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/behaviour/scatter")
+def behaviour_scatter(x: str = "ff_ratio", y: str = "tweets_per_day", max_points: int = 300):
+    """Phase 3 — Scatter plot data (x, y, label) for any two numeric engineered features."""
+    try:
+        return get_scatter_data(x_feat=x, y_feat=y, max_points=min(max_points, 500))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -2,11 +2,11 @@ import React, { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import HealthCheck from './pages/HealthCheck'
 import DatasetExplorer from './pages/DatasetExplorer'
+import BehaviourAnalytics from './pages/BehaviourAnalytics'
 import ComingSoon from './components/ComingSoon'
 
 const COMING_SOON = {
   dashboard:   { title: 'Dashboard',             description: 'Overview stats, bot/human charts, model performance.', phase: 6 },
-  behaviour:   { title: 'Behaviour Analytics',   description: 'Bot vs human feature comparison and charts.', phase: 3 },
   nlp:         { title: 'NLP Analysis',          description: 'Sentiment analysis, TF-IDF, and word clouds.', phase: 5 },
   network:     { title: 'Network Analysis',      description: 'Graph metrics: degree, centrality, PageRank.', phase: 5 },
   ml:          { title: 'ML Analysis',           description: 'Logistic Regression, Decision Tree, Random Forest.', phase: 4 },
@@ -18,8 +18,9 @@ export default function App() {
   const [activePage, setActivePage] = useState('dataset')
 
   function renderContent() {
-    if (activePage === 'health')  return <HealthCheck />
-    if (activePage === 'dataset') return <DatasetExplorer />
+    if (activePage === 'health')    return <HealthCheck />
+    if (activePage === 'dataset')   return <DatasetExplorer />
+    if (activePage === 'behaviour') return <BehaviourAnalytics />
 
     const page = COMING_SOON[activePage]
     if (!page) return null
