@@ -578,12 +578,11 @@ export default function AccountInvestigation() {
       {stats && !activeQuery && (
         <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 28 }}>
           {[
-            { icon: '🧑‍💻', label: 'Labeled Accounts', value: stats.labeled_accounts?.toLocaleString(), color: 'var(--color-primary)' },
-            { icon: '🚨', label: 'High Risk (≥60)',   value: stats.high_risk_count?.toLocaleString(),   color: '#ef4444' },
-            { icon: '⚠️', label: 'Moderate Risk',     value: stats.moderate_risk_count?.toLocaleString(), color: '#f59e0b' },
+            { label: 'Audited Account Population', value: stats.labeled_accounts?.toLocaleString(), color: 'var(--color-primary)' },
+            { label: 'High Risk Flagged Entities (≥60)',   value: stats.high_risk_count?.toLocaleString(),   color: '#ef4444' },
+            { label: 'Moderate Risk Accounts (40–59)',     value: stats.moderate_risk_count?.toLocaleString(), color: '#f59e0b' },
           ].map((s, i) => (
-            <div key={i} className="stat-card" style={{ borderColor: s.color + '40' }}>
-              <div style={{ fontSize: '1.8rem' }}>{s.icon}</div>
+            <div key={i} className="stat-card" style={{ borderLeft: `3px solid ${s.color}` }}>
               <div className="stat-card__value" style={{ color: s.color }}>{s.value}</div>
               <div className="stat-card__label">{s.label}</div>
             </div>

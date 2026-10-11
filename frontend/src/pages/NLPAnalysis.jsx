@@ -75,20 +75,28 @@ export default function NLPAnalysis() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>NLP Analysis</h1>
-        <p>Phase 5 — VADER Sentiment, TF-IDF Token Extraction & Word Frequency for Bot vs Human tweets</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <span className="badge badge-accent" style={{ marginBottom: 8 }}>Natural Language Processing</span>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Sentiment Analysis & Textual Extraction</h1>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+            VADER compound polarity scores, emotion valence, TF-IDF lexical discrimination, and bot vs human vocabulary divergence.
+          </p>
+        </div>
+        <span className="stat-pill" style={{ background: 'var(--color-surface-2)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
+          Parser: <strong>VADER + Scikit-Learn TF-IDF</strong>
+        </span>
       </div>
 
       {error && (
         <div className="error-box" style={{ marginBottom: 24 }}>
-          ⚠️ {error}
+          <span>{error}</span>
           <button className="btn-retry" onClick={fetchAll}>Retry</button>
         </div>
       )}
 
       {loading && (
-        <div className="loading-box"><div className="spinner" /> Running NLP analysis…</div>
+        <div className="loading-box"><div className="spinner" /> Running sentiment & lexical analysis…</div>
       )}
 
       {!loading && !error && sentiment && (
@@ -96,44 +104,53 @@ export default function NLPAnalysis() {
           {/* Summary sentiment cards */}
           <div className="ba-section">
             <div className="section-header">
-              <div className="section-title">Sentiment Overview</div>
-              <div className="section-subtitle">VADER compound score: −1 (very negative) to +1 (very positive)</div>
+              <div className="section-title">Sentiment Polarity Profile</div>
+              <div className="section-subtitle">VADER compound score metric: −1.00 (extreme negative) to +1.00 (extreme positive)</div>
             </div>
             <div className="ba-grid-2">
               {/* Bot card */}
-              <div className="card" style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <span className="label-badge label-badge--bot">🤖 Bot</span>
+              <div className="card" style={{ borderLeft: '4px solid #ef4444' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ef4444' }}>Bot Account Corpus</span>
                   <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                    {sentiment.bot.sample_n?.toLocaleString()} samples
+                    {sentiment.bot.sample_n?.toLocaleString()} tweets analyzed
                   </span>
                 </div>
-                <SentimentBar label="Compound" value={sentiment.bot.compound} color="#ef4444" />
-                <SentimentBar label="Positive"  value={sentiment.bot.pos}     color="#10b981" />
-                <SentimentBar label="Neutral"   value={sentiment.bot.neu}     color="#94a3b8" />
-                <SentimentBar label="Negative"  value={sentiment.bot.neg}     color="#f59e0b" />
+                <SentimentBar label="Compound Polarity" value={sentiment.bot.compound} color="#ef4444" />
+                <SentimentBar label="Positive Sentiment"  value={sentiment.bot.pos}     color="#10b981" />
+                <SentimentBar label="Neutral Sentiment"   value={sentiment.bot.neu}     color="#94a3b8" />
+                <SentimentBar label="Negative Sentiment"  value={sentiment.bot.neg}     color="#f59e0b" />
               </div>
+
               {/* Human card */}
-              <div className="card" style={{ borderColor: 'rgba(34,211,238,0.3)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <span className="label-badge label-badge--human">👤 Human</span>
+              <div className="card" style={{ borderLeft: '4px solid #22d3ee' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#22d3ee' }}>Human User Corpus</span>
                   <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                    {sentiment.human.sample_n?.toLocaleString()} samples
+                    {sentiment.human.sample_n?.toLocaleString()} tweets analyzed
                   </span>
                 </div>
-                <SentimentBar label="Compound" value={sentiment.human.compound} color="#22d3ee" />
-                <SentimentBar label="Positive"  value={sentiment.human.pos}     color="#10b981" />
-                <SentimentBar label="Neutral"   value={sentiment.human.neu}     color="#94a3b8" />
-                <SentimentBar label="Negative"  value={sentiment.human.neg}     color="#f59e0b" />
+                <SentimentBar label="Compound Polarity" value={sentiment.human.compound} color="#22d3ee" />
+                <SentimentBar label="Positive Sentiment"  value={sentiment.human.pos}     color="#10b981" />
+                <SentimentBar label="Neutral Sentiment"   value={sentiment.human.neu}     color="#94a3b8" />
+                <SentimentBar label="Negative Sentiment"  value={sentiment.human.neg}     color="#f59e0b" />
               </div>
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs without emojis */}
           <div className="tab-row" style={{ marginBottom: 24 }}>
-            {[['sentiment', '😊 Sentiment Comparison'], ['tfidf', '📝 TF-IDF Tokens'], ['wordfreq', '📊 Word Frequency']].map(([id, label]) => (
-              <button key={id} id={`nlp-tab-${id}`} className={`tab-btn${activeTab === id ? ' active' : ''}`}
-                onClick={() => setActiveTab(id)}>
+            {[
+              ['sentiment', 'Sentiment Comparison & Valence'],
+              ['tfidf', 'TF-IDF Discriminative Tokens'],
+              ['wordfreq', 'Lexical Word Frequencies']
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                id={`nlp-tab-${id}`}
+                className={`tab-btn${activeTab === id ? ' active' : ''}`}
+                onClick={() => setActiveTab(id)}
+              >
                 {label}
               </button>
             ))}
@@ -143,15 +160,16 @@ export default function NLPAnalysis() {
           {activeTab === 'sentiment' && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">Sentiment Radar — Bot vs Human</div>
+                <div className="section-title">Sentiment Radar Dimension: Bot vs Human</div>
+                <div className="section-subtitle">Multidimensional polarity comparison</div>
               </div>
-              <ResponsiveContainer width="100%" height={340}>
+              <ResponsiveContainer width="100%" height={320}>
                 <RadarChart data={sentimentRadar}>
                   <PolarGrid stroke="rgba(255,255,255,0.1)" />
                   <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <PolarRadiusAxis tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                  <Radar name="Bot"   dataKey="bot"   stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} />
-                  <Radar name="Human" dataKey="human" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.2} />
+                  <Radar name="Bot Accounts"   dataKey="bot"   stroke="#ef4444" fill="#ef4444" fillOpacity={0.25} />
+                  <Radar name="Human Accounts" dataKey="human" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.25} />
                   <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
                   <Tooltip content={<CustomTooltip />} />
                 </RadarChart>
@@ -161,9 +179,11 @@ export default function NLPAnalysis() {
               <div className="ba-grid-2" style={{ marginTop: 24 }}>
                 {['bot', 'human'].map(lbl => (
                   <div key={lbl}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 10,
-                      color: lbl === 'bot' ? '#ef4444' : '#22d3ee' }}>
-                      {lbl === 'bot' ? '🤖 Bot' : '👤 Human'} — Compound Distribution
+                    <div style={{
+                      fontSize: '0.82rem', fontWeight: 700, marginBottom: 10,
+                      color: lbl === 'bot' ? '#ef4444' : '#22d3ee',
+                    }}>
+                      {lbl === 'bot' ? 'Bot Corpus' : 'Human Corpus'} — Compound Distribution
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
                       <BarChart data={sentiment[lbl].distribution}>
@@ -185,15 +205,18 @@ export default function NLPAnalysis() {
           {activeTab === 'tfidf' && tfidf && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">TF-IDF Top Tokens</div>
-                <div className="section-subtitle">Most discriminative words/bigrams by TF-IDF score</div>
+                <div className="section-title">TF-IDF Top Discriminative Tokens</div>
+                <div className="section-subtitle">Key terms showing greatest variance in bot vs human language usage</div>
               </div>
               <div className="tab-row" style={{ marginBottom: 16 }}>
                 {['bot', 'human'].map(v => (
-                  <button key={v} id={`tfidf-view-${v}`}
+                  <button
+                    key={v}
+                    id={`tfidf-view-${v}`}
                     className={`tab-btn${tfidfView === v ? ' active' : ''}`}
-                    onClick={() => setTfidfView(v)}>
-                    {v === 'bot' ? '🤖 Bot Tokens' : '👤 Human Tokens'}
+                    onClick={() => setTfidfView(v)}
+                  >
+                    {v === 'bot' ? 'Bot Specific Tokens' : 'Human Specific Tokens'}
                   </button>
                 ))}
               </div>
@@ -215,15 +238,17 @@ export default function NLPAnalysis() {
           {activeTab === 'wordfreq' && wordFreq && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">Word Frequency Comparison</div>
-                <div className="section-subtitle">Most frequent words in bot vs human tweet corpus</div>
+                <div className="section-title">Lexical Frequency Distribution</div>
+                <div className="section-subtitle">Top unigrams observed in corpus messages</div>
               </div>
               <div className="ba-grid-2">
                 {['bot', 'human'].map(lbl => (
                   <div key={lbl}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 12,
-                      color: lbl === 'bot' ? '#ef4444' : '#22d3ee' }}>
-                      {lbl === 'bot' ? '🤖 Bot Words' : '👤 Human Words'}
+                    <div style={{
+                      fontSize: '0.85rem', fontWeight: 700, marginBottom: 12,
+                      color: lbl === 'bot' ? '#ef4444' : '#22d3ee',
+                    }}>
+                      {lbl === 'bot' ? 'Bot Lexicon' : 'Human Lexicon'}
                     </div>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={wordFreq[lbl].slice(0, 15)} layout="vertical">

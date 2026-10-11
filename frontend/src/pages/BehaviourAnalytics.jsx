@@ -45,10 +45,9 @@ function SectionHeader({ title, subtitle }) {
   )
 }
 
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color }) {
   return (
-    <div className="stat-card" style={{ borderColor: color + '55' }}>
-      <div className="stat-card__icon" style={{ color }}>{icon}</div>
+    <div className="stat-card" style={{ borderLeft: `3px solid ${color}` }}>
       <div className="stat-card__value" style={{ color }}>{value}</div>
       <div className="stat-card__label">{label}</div>
     </div>
@@ -67,7 +66,7 @@ function LoadingBox() {
 function ErrorBox({ msg, retry }) {
   return (
     <div className="error-box">
-      <span>⚠ {msg}</span>
+      <span>{msg}</span>
       {retry && <button className="btn-retry" onClick={retry}>Retry</button>}
     </div>
   )
@@ -95,10 +94,10 @@ function FeatureSummaryCards() {
   if (error)   return <ErrorBox msg={error} />
   return (
     <div className="stat-grid">
-      <StatCard label="Total Features"     value={data.total_features}    color="#6366f1" icon="⚙️" />
-      <StatCard label="Labeled Accounts"   value={data.labeled_accounts}  color="#f59e0b" icon="🏷️" />
-      <StatCard label="Bot Accounts"       value={data.bot_count}         color={BOT_COLOR}   icon="🤖" />
-      <StatCard label="Human Accounts"     value={data.human_count}       color={HUMAN_COLOR} icon="👤" />
+      <StatCard label="Total Features Formulated" value={data.total_features}   color="#6366f1" />
+      <StatCard label="Labeled Account Population" value={data.labeled_accounts} color="#f59e0b" />
+      <StatCard label="Identified Bot Entities"    value={data.bot_count}        color={BOT_COLOR} />
+      <StatCard label="Verified Human Users"       value={data.human_count}      color={HUMAN_COLOR} />
     </div>
   )
 }
@@ -212,7 +211,7 @@ function ScoreDistributions() {
             className={`tab-btn${active === k ? ' active' : ''}`}
             onClick={() => setActive(k)}
           >
-            {k === 'suspicion_score' ? '🔴 Suspicion Score' : '🟢 Activity Score'}
+            {k === 'suspicion_score' ? 'Suspicion Index Distribution' : 'Activity Index Distribution'}
           </button>
         ))}
       </div>
@@ -379,8 +378,11 @@ export default function BehaviourAnalytics() {
   return (
     <div>
       <div className="page-header">
-        <h1>Behaviour Analytics</h1>
-        <p>Phase 3 — Feature Engineering &amp; Statistical Behaviour Comparison (Bot vs Human)</p>
+        <span className="badge badge-primary" style={{ marginBottom: 8 }}>Behavioural Intelligence</span>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Customer & User Behaviour Analytics</h1>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+          Statistical profiling of temporal activity patterns, engagement burstiness, follow ratios, and composite bot likelihood indices.
+        </p>
       </div>
 
       {/* Stat summary cards */}

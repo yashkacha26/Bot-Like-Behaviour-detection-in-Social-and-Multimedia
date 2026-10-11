@@ -163,27 +163,35 @@ export default function MLAnalysis() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>ML Analysis</h1>
-        <p>Phase 4 — Logistic Regression, Decision Tree & Random Forest with 5-fold cross-validation</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <span className="badge badge-primary" style={{ marginBottom: 8 }}>Predictive Analytics</span>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Machine Learning Classification Models</h1>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+            Logistic Regression, Decision Tree & Random Forest evaluated with 5-fold cross-validation and hold-out test metrics.
+          </p>
+        </div>
+        <span className="stat-pill" style={{ background: 'var(--color-surface-2)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
+          Trained on: <strong>14 Engineered Features</strong>
+        </span>
       </div>
 
       {/* Train button */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
         <button
           id="btn-train-models"
           onClick={handleTrain}
           disabled={training}
           style={{
-            padding: '10px 24px', borderRadius: 'var(--radius-sm)',
+            padding: '9px 20px', borderRadius: 'var(--radius-sm)',
             background: training ? 'rgba(99,102,241,0.3)' : 'var(--color-primary)',
-            color: '#fff', fontWeight: 700, fontSize: '0.9rem',
-            border: '1px solid rgba(99,102,241,0.5)',
+            color: '#fff', fontWeight: 700, fontSize: '0.85rem',
+            border: 'none',
             cursor: training ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s',
           }}
         >
-          {training ? '⏳ Training Models…' : '🚀 Train Models'}
+          {training ? 'Re-training Models...' : 'Re-fit / Train Pipeline'}
         </button>
 
         {/* Model selector */}
@@ -203,7 +211,7 @@ export default function MLAnalysis() {
 
       {error && (
         <div className="error-box" style={{ marginBottom: 24 }}>
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
           <button className="btn-retry" onClick={() => fetchAll()}>Retry</button>
         </div>
       )}
