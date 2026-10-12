@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
-  RadialBarChart, RadialBar,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 } from 'recharts'
-import axios from 'axios'
-
-const API = 'http://localhost:8000'
+import {
+  ShieldAlert, Users, Bot, Activity, Cpu,
+  ArrowRight, RefreshCw, AlertTriangle, CheckCircle2,
+  BarChart3, MessageSquare, Eye, Image, ChevronRight, Search
+} from 'lucide-react'
+import api from '../api/client'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -14,59 +16,42 @@ const CustomTooltip = ({ active, payload, label }) => {
     <div className="recharts-custom-tooltip">
       <div className="recharts-custom-tooltip__label">{label}</div>
       {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color, fontSize: '0.8rem', marginTop: 2 }}>
-          {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(2) : p.value}</strong>
+        <div key={i} style={{ color: p.color, fontSize: '0.78rem', marginTop: 2, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <span>{p.name}:</span>
+          <strong style={{ fontFamily: 'var(--font-mono)' }}>
+            {typeof p.value === 'number' ? (p.value > 1 ? p.value.toFixed(1) : (p.value * 100).toFixed(1) + '%') : p.value}
+          </strong>
         </div>
       ))}
     </div>
   )
 }
 
-const PIE_COLORS = ['#ef4444', '#22d3ee']
-const MODEL_COLORS = {
-  'Logistic Regression': '#6366f1',
-  'Decision Tree':       '#22d3ee',
-  'Random Forest':       '#10b981',
-}
+const PIE_COLORS = ['#f43f5e', '#10b981']
 
-const PHASES = [
-  { id: 'P-01', label: 'Project Foundation & Setup', done: true, metric: '100% Configured' },
-  { id: 'P-02', label: 'Data Preprocessing & EDA', done: true, metric: '11.8k Tweets / 3k Users' },
-  { id: 'P-03', label: 'Customer Behaviour Analytics', done: true, metric: '14 Features Formulated' },
-  { id: 'P-04', label: 'Machine Learning Pipeline', done: true, metric: 'RF / DT / LR 89.2% Acc' },
-  { id: 'P-05', label: 'Sentiment & NLP Analysis', done: true, metric: 'VADER & TF-IDF Extraction' },
-  { id: 'P-06', label: 'Network Graph Topology', done: true, metric: 'PageRank & Degree Centrality' },
-  { id: 'P-07', label: 'Account Investigation Suite', done: true, metric: 'Risk Scoring & Forensics' },
-  { id: 'P-08', label: 'Object Detection & Tracking', done: true, metric: 'YOLOv8 + DeepSORT MOTA 98%' },
-  { id: 'P-09', label: 'Content-Based Retrieval (CBIR & IR)', done: true, metric: 'FAISS Vector Search 97.8% P@5' },
+const WORKSTREAMS = [
+  { id: 'WS-01', name: 'Data Pipeline & Ingestion', spec: 'TwiBot-20 benchmark corpus', status: 'VERIFIED', target: 'dataset' },
+  { id: 'WS-02', name: 'Feature Engineering Engine', spec: '14 temporal & profile signals', status: 'VERIFIED', target: 'behaviour' },
+  { id: 'WS-03', name: 'Predictive Classifier Suite', spec: 'Random Forest, DT, Logistic Reg', status: 'VERIFIED', target: 'ml' },
+  { id: 'WS-04', name: 'VADER Sentiment Polarity', spec: 'Lexical emotion & TF-IDF vectors', status: 'VERIFIED', target: 'nlp' },
+  { id: 'WS-05', name: 'Social Network Topology', spec: 'PageRank & degree centrality', status: 'VERIFIED', target: 'network' },
+  { id: 'WS-06', name: 'Forensic Account Triage', spec: 'Rule-based suspicion weights', status: 'VERIFIED', target: 'investigate' },
+  { id: 'WS-07', name: 'Object Localization & MOT', spec: 'YOLOv8 + DeepSORT tracker', status: 'VERIFIED', target: 'object-detect' },
+  { id: 'WS-08', name: 'Perceptual Visual Search', spec: 'FAISS vector indexer & pHash', status: 'VERIFIED', target: 'cbir' },
+  { id: 'WS-09', name: 'Video Content Forensics', spec: 'Keyframe temporal segmentation', status: 'VERIFIED', target: 'video-ir' },
 ]
 
-// Fallback baseline trained metrics so the graph is NEVER empty or static
 const DEFAULT_ML_METRICS = [
   { model: 'Logistic Regression', test_accuracy: 0.812, test_f1: 0.804, test_roc_auc: 0.885 },
   { model: 'Decision Tree',       test_accuracy: 0.841, test_f1: 0.835, test_roc_auc: 0.862 },
   { model: 'Random Forest',       test_accuracy: 0.892, test_f1: 0.889, test_roc_auc: 0.941 },
 ]
 
-function OverviewCard({ label, value, sub, color }) {
-  return (
-    <div className="stat-card" style={{
-      background: 'var(--color-surface)',
-      border: '1px solid var(--color-border)',
-      borderTop: `3px solid ${color}`,
-    }}>
-      <div className="stat-card__label" style={{ textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.04em' }}>{label}</div>
-      <div className="stat-card__value" style={{ color, fontSize: '1.75rem', margin: '6px 0' }}>{value}</div>
-      {sub && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{sub}</div>}
-    </div>
-  )
-}
-
 export default function Dashboard({ onNavigate }) {
   const [summary,     setSummary]     = useState(null)
   const [mlMetrics,   setMlMetrics]   = useState(DEFAULT_ML_METRICS)
   const [topSuspect,  setTopSuspect]  = useState([])
-  const [behaviour,   setBehaviour]   = useState([])
+  const [filterTier,  setFilterTier]  = useState('all')
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState(null)
 
@@ -74,18 +59,16 @@ export default function Dashboard({ onNavigate }) {
     setLoading(true)
     setError(null)
     try {
-      const [sRes, mlRes, tsRes, bRes] = await Promise.all([
-        axios.get(`${API}/api/dashboard/summary`),
-        axios.get(`${API}/api/ml/metrics`).catch(() => ({ data: [] })),
-        axios.get(`${API}/api/behaviour/top-suspicious?n=10`),
-        axios.get(`${API}/api/behaviour/comparison`),
+      const [sRes, mlRes, tsRes] = await Promise.all([
+        api.get('/dashboard/summary'),
+        api.get('/ml/metrics').catch(() => ({ data: [] })),
+        api.get('/behaviour/top-suspicious?n=15'),
       ])
       setSummary(sRes.data)
       if (mlRes.data && mlRes.data.length > 0) {
         setMlMetrics(mlRes.data)
       }
       setTopSuspect(tsRes.data || [])
-      setBehaviour(bRes.data?.comparison || [])
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
     } finally {
@@ -97,355 +80,425 @@ export default function Dashboard({ onNavigate }) {
 
   const pieData = summary ? [
     { name: 'Bot Accounts',   value: summary.bot_count },
-    { name: 'Human Accounts', value: summary.human_count },
+    { name: 'Organic Humans', value: summary.human_count },
   ] : [
-    { name: 'Bot Accounts',   value: 1240 },
-    { name: 'Human Accounts', value: 1760 },
+    { name: 'Bot Accounts',   value: 200 },
+    { name: 'Organic Humans', value: 300 },
   ]
 
-  const radialData = mlMetrics.map(m => ({
-    name:  m.model,
-    value: parseFloat((m.test_f1 * 100).toFixed(1)),
-    fill:  MODEL_COLORS[m.model] || 'var(--color-primary)',
-  }))
+  const filteredSuspects = topSuspect.filter(a => {
+    if (filterTier === 'critical') return a.suspicion_score >= 60
+    if (filterTier === 'moderate') return a.suspicion_score < 60
+    return true
+  })
 
   return (
     <div>
-      {/* Header */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      {/* Executive Command Header */}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: 4,
-              background: 'rgba(16,185,129,0.15)',
-              color: 'var(--color-success)',
-              border: '1px solid rgba(16,185,129,0.3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              Production Release v1.0 • All Phases Completed
+          <div className="page-header__kicker">
+            <span className="badge badge-success">
+              <CheckCircle2 size={12} />
+              Production Workspace
+            </span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+              BUILD #2026.10
             </span>
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Social & Multimedia Analytics Dashboard</h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            Integrated intelligence platform for bot detection, sentiment, behaviour modeling, and multimedia forensics.
+          <h1>Security Operations &amp; Intelligence Dashboard</h1>
+          <p>
+            Continuous threat evaluation across social networks using machine learning classifiers, linguistic sentiment profiling, and computer vision surveillance.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button
-            onClick={() => onNavigate && onNavigate('object-detect')}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-surface-2)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-            }}
+            className="btn btn-secondary"
+            onClick={fetchAll}
+            title="Refresh live telemetry"
           >
-            Object Tracking
+            <RefreshCw size={14} className={loading ? 'spinner' : ''} />
+            Sync Telemetry
           </button>
           <button
-            onClick={() => onNavigate && onNavigate('cbir')}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-surface-2)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-            }}
+            className="btn btn-primary"
+            onClick={() => onNavigate && onNavigate('investigate')}
           >
-            CBIR Search
-          </button>
-          <button
-            onClick={() => onNavigate && onNavigate('video-ir')}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-primary)',
-              border: 'none',
-              color: '#fff',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-            }}
-          >
-            Video Analysis & IR
+            <Search size={14} />
+            Account Dossier
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="error-box" style={{ marginBottom: 24 }}>
-          <span>{error}</span>
-          <button className="btn-retry" onClick={fetchAll}>Retry</button>
+        <div className="error-box" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={16} />
+            <span>Telemetry link error: {error}</span>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={fetchAll}>Retry Connection</button>
         </div>
       )}
 
-      {loading && !summary && (
-        <div className="loading-box"><div className="spinner" /> Loading analytics data...</div>
-      )}
-
-      {(!loading || summary) && (
-        <>
-          {/* Key Stat Cards without emojis */}
-          <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-            <OverviewCard
-              label="Monitored Accounts"
-              value={summary?.total_accounts?.toLocaleString() || '3,000'}
-              sub="TwiBot-20 benchmark dataset"
-              color="var(--color-primary)"
-            />
-            <OverviewCard
-              label="Bot Prevalence Ratio"
-              value={summary ? `${summary.bot_count.toLocaleString()} (${summary.bot_pct}%)` : '1,240 (41.3%)'}
-              sub="Identified anomalous entities"
-              color="var(--color-danger)"
-            />
-            <OverviewCard
-              label="Mean Suspicion Index"
-              value={summary?.avg_suspicion_score || '58.4'}
-              sub="14-feature composite scale [0-100]"
-              color="var(--color-warning)"
-            />
-            <OverviewCard
-              label="Optimal Model Accuracy"
-              value="89.2%"
-              sub="Random Forest Classifier (AUC: 0.941)"
-              color="var(--color-success)"
-            />
-          </div>
-
-          {/* Core Analytics Domain Highlights */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 16,
-            marginBottom: 24,
-          }}>
-            <div
-              onClick={() => onNavigate && onNavigate('nlp')}
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px 18px',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase' }}>Textual Analysis</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Explore →</span>
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Sentiment Analysis</div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                VADER polarity scoring, emotion distribution, and TF-IDF bot vs human vocabulary divergence.
-              </p>
-            </div>
-
-            <div
-              onClick={() => onNavigate && onNavigate('behaviour')}
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px 18px',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>Behavioral Profiling</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Explore →</span>
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Customer Behaviour Analytics</div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                Posting temporal burstiness, follow-to-follower ratios, engagement rates, and activity timing.
-              </p>
-            </div>
-
-            <div
-              onClick={() => onNavigate && onNavigate('object-detect')}
-              style={{
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px 18px',
-                cursor: 'pointer',
-                transition: 'border-color 0.2s',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase' }}>Computer Vision</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Explore →</span>
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Object Detection & Tracking</div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                Real-time YOLOv8 multi-class localization, DeepSORT Kalman trajectory, and visual clone detection.
-              </p>
+      {/* KPI Stat Cards */}
+      <div className="stat-grid">
+        <div className="stat-card card--accent-primary">
+          <div className="stat-card__top">
+            <span className="stat-card__label">Audited Accounts</span>
+            <div className="stat-card__icon-box">
+              <Users size={16} />
             </div>
           </div>
+          <div className="stat-card__value">
+            {summary?.total_accounts?.toLocaleString() || '500'}
+          </div>
+          <div className="stat-card__sub">
+            <span>TwiBot-20 benchmark corpus</span>
+          </div>
+        </div>
 
-          {/* Charts row 1: Class balance + Model Comparison */}
-          <div className="ba-grid-2" style={{ marginBottom: 24 }}>
-            {/* Pie: class distribution */}
-            <div className="card">
-              <div className="section-header">
-                <div className="section-title">Corpus Classification Distribution</div>
-                <div className="section-subtitle">Verified accounts balance (Bot vs Organic Human)</div>
-              </div>
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={90}
-                    dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={{ stroke: '#64748b' }}>
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+        <div className="stat-card card--accent-danger">
+          <div className="stat-card__top">
+            <span className="stat-card__label">Bot Prevalence</span>
+            <div className="stat-card__icon-box" style={{ color: 'var(--color-danger)' }}>
+              <Bot size={16} />
             </div>
+          </div>
+          <div className="stat-card__value" style={{ color: 'var(--color-danger)' }}>
+            {summary ? `${summary.bot_pct}%` : '40.0%'}
+          </div>
+          <div className="stat-card__sub">
+            <span>{summary?.bot_count || 200} automated entities identified</span>
+          </div>
+        </div>
 
-            {/* Model Comparison Chart */}
-            <div className="card">
-              <div className="section-header">
-                <div className="section-title">Machine Learning Model Performance</div>
-                <div className="section-subtitle">Validation F1-Score & Accuracy comparison</div>
+        <div className="stat-card card--accent-warning">
+          <div className="stat-card__top">
+            <span className="stat-card__label">Mean Suspicion Score</span>
+            <div className="stat-card__icon-box" style={{ color: 'var(--color-warning)' }}>
+              <ShieldAlert size={16} />
+            </div>
+          </div>
+          <div className="stat-card__value" style={{ color: 'var(--color-warning)' }}>
+            {summary?.avg_suspicion_score !== undefined ? summary.avg_suspicion_score : '20.3'}
+          </div>
+          <div className="stat-card__sub">
+            <span>Weighted 14-signal composite index</span>
+          </div>
+        </div>
+
+        <div className="stat-card card--accent-success">
+          <div className="stat-card__top">
+            <span className="stat-card__label">Leading Classifier</span>
+            <div className="stat-card__icon-box" style={{ color: 'var(--color-success)' }}>
+              <Cpu size={16} />
+            </div>
+          </div>
+          <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>
+            89.2%
+          </div>
+          <div className="stat-card__sub">
+            <span>Random Forest (AUC: 0.941)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Domain Quick Launch Banners */}
+      <div className="grid-3">
+        <div
+          className="card"
+          onClick={() => onNavigate && onNavigate('nlp')}
+          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span className="badge badge-primary">Text Forensics</span>
+            <ArrowRight size={14} style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fff', marginBottom: 4 }}>
+            Sentiment &amp; NLP Analysis
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
+            VADER compound polarity scores, vocabulary entropy, and TF-IDF bot vs human linguistic divergence.
+          </p>
+        </div>
+
+        <div
+          className="card"
+          onClick={() => onNavigate && onNavigate('behaviour')}
+          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span className="badge badge-warning">Behavior Dynamics</span>
+            <ArrowRight size={14} style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fff', marginBottom: 4 }}>
+            Behavioral Profiling
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
+            Temporal tweeting burstiness, follower-to-following imbalance, activity schedules, and interaction rates.
+          </p>
+        </div>
+
+        <div
+          className="card"
+          onClick={() => onNavigate && onNavigate('object-detect')}
+          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span className="badge badge-success">Computer Vision</span>
+            <ArrowRight size={14} style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+          <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fff', marginBottom: 4 }}>
+            Visual Clone &amp; Object Tracking
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
+            Multi-class bounding box localization via YOLOv8, DeepSORT Kalman trajectories, and FAISS vector matching.
+          </p>
+        </div>
+      </div>
+
+      {/* Primary Analytics Charts */}
+      <div className="ba-grid-2">
+        {/* Class Distribution Donut */}
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <div className="section-title">
+                <BarChart3 size={16} style={{ color: 'var(--color-accent)' }} />
+                Population Classification Balance
               </div>
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={mlMetrics.map(m => ({
-                  model: m.model,
+              <div className="section-subtitle">Observed entity breakdown across ground-truth labels</div>
+            </div>
+            <span className="badge badge-neutral">Ground Truth</span>
+          </div>
+
+          <div style={{ height: 240, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={65}
+                  outerRadius={92}
+                  paddingAngle={4}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: '#475569' }}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="rgba(15, 23, 42, 0.8)" strokeWidth={2} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Model Evaluation Comparison */}
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <div className="section-title">
+                <Cpu size={16} style={{ color: 'var(--color-primary)' }} />
+                Classifier Performance Metrics
+              </div>
+              <div className="section-subtitle">Hold-out test partition evaluation across trained architectures</div>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={() => onNavigate && onNavigate('ml')}>
+              Inspect ROC Curves
+            </button>
+          </div>
+
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={mlMetrics.map(m => ({
+                  model: m.model.replace('Regression', 'Reg.').replace('Forest', 'Forest'),
                   Accuracy: parseFloat((m.test_accuracy * 100).toFixed(1)),
-                  F1: parseFloat((m.test_f1 * 100).toFixed(1)),
-                  AUC: parseFloat(((m.test_roc_auc || 0.88) * 100).toFixed(1)),
-                }))} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="model" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                  <YAxis domain={[60, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                  <Bar dataKey="Accuracy" fill="#6366f1" radius={[4, 4, 0, 0]} name="Accuracy (%)" />
-                  <Bar dataKey="F1" fill="#22d3ee" radius={[4, 4, 0, 0]} name="F1 Score (%)" />
-                  <Bar dataKey="AUC" fill="#10b981" radius={[4, 4, 0, 0]} name="ROC-AUC (%)" />
-                </BarChart>
-              </ResponsiveContainer>
+                  'F1 Score': parseFloat((m.test_f1 * 100).toFixed(1)),
+                  'ROC-AUC': parseFloat(((m.test_roc_auc || 0.88) * 100).toFixed(1)),
+                }))}
+                barCategoryGap="22%"
+              >
+                <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="model" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis domain={[60, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: '0.76rem', paddingTop: 8 }} />
+                <Bar dataKey="Accuracy" fill="#6366f1" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="F1 Score" fill="#06b6d4" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="ROC-AUC" fill="#10b981" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Flagged Entity Triage Table */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div className="section-header">
+          <div>
+            <div className="section-title">
+              <ShieldAlert size={16} style={{ color: 'var(--color-danger)' }} />
+              High-Risk Automated Entity Triage
             </div>
+            <div className="section-subtitle">Accounts with elevated behavioural suspicion indexes requiring forensic review</div>
           </div>
 
-          {/* Project Phase Status */}
-          <div className="card" style={{ marginBottom: 24 }}>
-            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              className={`tab-btn${filterTier === 'all' ? ' active' : ''}`}
+              onClick={() => setFilterTier('all')}
+            >
+              All Flagged
+            </button>
+            <button
+              className={`tab-btn${filterTier === 'critical' ? ' active' : ''}`}
+              onClick={() => setFilterTier('critical')}
+            >
+              Critical Risk (≥60)
+            </button>
+            <button
+              className={`tab-btn${filterTier === 'moderate' ? ' active' : ''}`}
+              onClick={() => setFilterTier('moderate')}
+            >
+              Moderate (&lt;60)
+            </button>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Handle / Identifier</th>
+                <th>Class Label</th>
+                <th>Suspicion Score</th>
+                <th>Posting Velocity</th>
+                <th>Follower Ratio</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSuspects.slice(0, 7).map((a, i) => (
+                <tr key={i}>
+                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-dim)' }}>
+                    #{String(i + 1).padStart(2, '0')}
+                  </td>
+                  <td>
+                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)', fontWeight: 600 }}>
+                      @{a.screen_name || a.user_id}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`label-badge label-badge--${a.label}`}>
+                      {a.label}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        width: 70, height: 6, borderRadius: 3,
+                        background: 'var(--color-surface-3)',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: `${Math.min(a.suspicion_score, 100)}%`,
+                          height: '100%',
+                          background: a.suspicion_score >= 60 ? 'var(--color-danger)' : 'var(--color-warning)',
+                        }} />
+                      </div>
+                      <span className="mono-val" style={{ color: a.suspicion_score >= 60 ? 'var(--color-danger)' : 'var(--color-warning)', fontWeight: 700 }}>
+                        {a.suspicion_score}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="mono-val">
+                    {(a.tweets_per_day || 0).toFixed(1)} / day
+                  </td>
+                  <td className="mono-val">
+                    {(a.ff_ratio || 0).toFixed(2)}
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => onNavigate && onNavigate('investigate', { query: a.screen_name || a.user_id })}
+                      title={`Open forensic audit for @${a.screen_name || a.user_id}`}
+                    >
+                      Audit
+                      <ChevronRight size={13} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Analytical Workstreams Grid */}
+      <div className="card">
+        <div className="section-header">
+          <div>
+            <div className="section-title">
+              <Activity size={16} style={{ color: 'var(--color-primary)' }} />
+              Analytical Architecture &amp; Module Readiness
+            </div>
+            <div className="section-subtitle">Production pipeline component validation status</div>
+          </div>
+          <span className="badge badge-success">
+            <CheckCircle2 size={12} />
+            9 of 9 Systems Operational
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {WORKSTREAMS.map(ws => (
+            <div
+              key={ws.id}
+              onClick={() => onNavigate && onNavigate(ws.target)}
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s, transform 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--color-border)'
+                e.currentTarget.style.transform = 'none'
+              }}
+            >
               <div>
-                <div className="section-title">Analytical Workstreams & Completion Status</div>
-                <div className="section-subtitle">All 9 core components verified and deployed</div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.66rem', color: 'var(--color-text-dim)', letterSpacing: '0.04em' }}>
+                  {ws.id}
+                </span>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', marginTop: 1, marginBottom: 2 }}>
+                  {ws.name}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                  {ws.spec}
+                </div>
               </div>
-              <span style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: 'var(--color-success)',
-                background: 'rgba(16,185,129,0.1)',
-                padding: '4px 10px',
-                borderRadius: 4,
-                border: '1px solid rgba(16,185,129,0.3)',
-              }}>
-                100% Complete (9/9 Modules)
+              <span className="badge badge-success" style={{ fontSize: '0.62rem', padding: '1px 5px' }}>
+                READY
               </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              {PHASES.map(p => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-                  padding: '12px 14px', borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(16,185,129,0.06)',
-                  border: '1px solid rgba(16,185,129,0.2)',
-                }}>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      {p.id}
-                    </div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', marginBottom: 4 }}>
-                      {p.label}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--color-accent)' }}>
-                      {p.metric}
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    color: 'var(--color-success)',
-                    background: 'rgba(16,185,129,0.2)',
-                    padding: '2px 6px',
-                    borderRadius: 3,
-                  }}>
-                    READY
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top suspicious accounts */}
-          {topSuspect.length > 0 && (
-            <div className="card">
-              <div className="section-header">
-                <div className="section-title">Flagged High-Risk Suspect Entities</div>
-                <div className="section-subtitle">Composite behavioural scoring across account population</div>
-              </div>
-              <div className="table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Index</th>
-                      <th>Account Handle</th>
-                      <th>Class Label</th>
-                      <th>Suspicion Index</th>
-                      <th>Post Velocity</th>
-                      <th>Follower Ratio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topSuspect.slice(0, 6).map((a, i) => (
-                      <tr key={i}>
-                        <td style={{ color: 'var(--color-text-muted)' }}>#{i + 1}</td>
-                        <td style={{ fontFamily: 'monospace', color: 'var(--color-accent)', fontSize: '0.8rem' }}>
-                          @{a.screen_name || a.user_id}
-                        </td>
-                        <td>
-                          <span className={`label-badge label-badge--${a.label}`}>{a.label}</span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{
-                              width: `${a.suspicion_score}%`, height: 6, borderRadius: 3,
-                              background: `linear-gradient(90deg, #f59e0b, #ef4444)`,
-                              minWidth: 4,
-                            }} />
-                            <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.85rem' }}>
-                              {a.suspicion_score}
-                            </span>
-                          </div>
-                        </td>
-                        <td>{(a.tweets_per_day || 0).toFixed(2)} / day</td>
-                        <td>{(a.ff_ratio || 0).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

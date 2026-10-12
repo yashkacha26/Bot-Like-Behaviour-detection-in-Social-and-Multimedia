@@ -1,117 +1,170 @@
-import React, { useEffect, useState } from 'react'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { Database, AlertTriangle, CheckCircle, Info } from 'lucide-react'
+import React, { useEffect, useState, useMemo } from 'react'
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+} from 'recharts'
+import {
+  Database, AlertTriangle, CheckCircle, Info, RefreshCw,
+  Download, Search, Filter, ExternalLink, ChevronRight, Layers, FileCode
+} from 'lucide-react'
 import api from '../api/client'
 
 /* ── colour palette ─────────────────────────────────────────────────────── */
 const COLORS = { bot: '#ef4444', human: '#10b981', unlabeled: '#6366f1' }
 const BAR_COLOR = '#6366f1'
 
-/* ── tiny reusable pieces ───────────────────────────────────────────────── */
 function StatCard({ label, value, sub, color }) {
   return (
-    <div className="card" style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: '2rem', fontWeight: 800, color: color || 'var(--color-accent)' }}>
+    <div className="stat-card" style={{ borderTop: `2px solid ${color || 'var(--color-primary)'}` }}>
+      <div className="stat-card__label">{label}</div>
+      <div className="stat-card__value" style={{ color: color || 'var(--color-accent)', margin: '6px 0 2px' }}>
         {value}
       </div>
-      <div style={{ fontWeight: 600, marginTop: 4 }}>{label}</div>
-      {sub && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: 4 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{sub}</div>}
     </div>
   )
 }
 
-function SectionHeader({ icon: Icon, title }) {
+function SectionHeader({ icon: Icon, title, rightContent }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: 32 }}>
-      <Icon size={18} color="var(--color-primary)" />
-      <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{title}</h2>
+    <div className="section-header" style={{ marginTop: 28, marginBottom: 14 }}>
+      <div className="section-title">
+        <Icon size={16} style={{ color: 'var(--color-primary)' }} />
+        {title}
+      </div>
+      {rightContent}
     </div>
   )
 }
 
 function LoadingCard() {
   return (
-    <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-      <div className="spinner" style={{ margin: '0 auto 16px' }} />
-      <p style={{ color: 'var(--color-text-muted)' }}>Loading dataset…</p>
+    <div className="card loading-box" style={{ padding: 60 }}>
+      <div className="spinner" />
+      <span>Loading TwiBot-20 schema &amp; sample metrics…</span>
     </div>
   )
 }
 
-function ErrorCard({ message }) {
+function ErrorCard({ message, onRetry }) {
   return (
-    <div className="card" style={{ borderColor: 'rgba(239,68,68,0.4)', textAlign: 'center', padding: 48 }}>
-      <AlertTriangle size={40} color="var(--color-danger)" style={{ margin: '0 auto 12px' }} />
-      <p style={{ color: 'var(--color-danger)' }}>{message}</p>
+    <div className="card error-box" style={{ padding: 40, flexDirection: 'column', gap: 14, textAlign: 'center' }}>
+      <AlertTriangle size={36} style={{ color: 'var(--color-danger)' }} />
+      <div style={{ color: 'var(--color-danger)', fontWeight: 600 }}>{message}</div>
+      {onRetry && (
+        <button className="btn btn-secondary btn-sm" onClick={onRetry}>
+          <RefreshCw size={13} />
+          Retry Connection
+        </button>
+      )}
     </div>
   )
 }
 
-/* ── Demo dataset banner ────────────────────────────────────────────────── */
 function DemoBanner({ note }) {
   if (!note) return null
   return (
     <div style={{
-      background: 'rgba(245,158,11,0.1)',
-      border: '1px solid rgba(245,158,11,0.35)',
+      background: 'rgba(245,158,11,0.08)',
+      border: '1px solid rgba(245,158,11,0.3)',
       borderRadius: 'var(--radius-sm)',
-      padding: '12px 16px',
+      padding: '10px 16px',
       display: 'flex',
-      gap: 10,
-      alignItems: 'flex-start',
-      marginBottom: 24,
+      gap: 12,
+      alignItems: 'center',
+      marginBottom: 20,
     }}>
-      <Info size={18} color="var(--color-warning)" style={{ flexShrink: 0, marginTop: 2 }} />
-      <p style={{ fontSize: '0.85rem', color: 'var(--color-warning)', margin: 0 }}>
-        <strong>Demo Dataset:</strong> {note}
-      </p>
+      <Info size={16} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+      <div style={{ fontSize: '0.82rem', color: 'var(--color-warning)' }}>
+        <strong>Benchmark Ingestion:</strong> {note}
+      </div>
     </div>
   )
 }
 
-/* ── Main Component ─────────────────────────────────────────────────────── */
-export default function DatasetExplorer() {
-  const [summary, setSummary]   = useState(null)
-  const [dist, setDist]         = useState([])
-  const [missing, setMissing]   = useState([])
-  const [sample, setSample]     = useState([])
-  const [columns, setColumns]   = useState([])
-  const [dupInfo, setDupInfo]   = useState(null)
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+export default function DatasetExplorer({ onNavigate }) {
+  const [summary, setSummary]         = useState(null)
+  const [dist, setDist]               = useState([])
+  const [missing, setMissing]         = useState([])
+  const [sample, setSample]           = useState([])
+  const [columns, setColumns]         = useState([])
+  const [dupInfo, setDupInfo]         = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [reloading, setReloading]     = useState(false)
+  const [error, setError]             = useState(null)
+  const [reloadNotice, setReloadNotice] = useState(false)
+
+  // Interactive filters
+  const [sampleCount, setSampleCount] = useState(15)
+  const [classFilter, setClassFilter] = useState('all')
+  const [columnSearch, setColumnSearch] = useState('')
+
+  const fetchAll = async (n = sampleCount) => {
+    try {
+      const [sumRes, distRes, misRes, smpRes, colRes, dupRes] = await Promise.all([
+        api.get('/dataset/summary'),
+        api.get('/dataset/distribution'),
+        api.get('/dataset/missing'),
+        api.get(`/dataset/sample?n=${n}`),
+        api.get('/dataset/columns'),
+        api.get('/dataset/duplicates'),
+      ])
+      setSummary(sumRes.data)
+      setDist(distRes.data)
+      setMissing(misRes.data.slice(0, 12))
+      setSample(smpRes.data)
+      setColumns(colRes.data)
+      setDupInfo(dupRes.data)
+    } catch (e) {
+      setError(e.message || 'Failed to load dataset telemetry')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function fetchAll() {
-      try {
-        const [sumRes, distRes, misRes, smpRes, colRes, dupRes] = await Promise.all([
-          api.get('/dataset/summary'),
-          api.get('/dataset/distribution'),
-          api.get('/dataset/missing'),
-          api.get('/dataset/sample?n=10'),
-          api.get('/dataset/columns'),
-          api.get('/dataset/duplicates'),
-        ])
-        setSummary(sumRes.data)
-        setDist(distRes.data)
-        setMissing(misRes.data.slice(0, 12))
-        setSample(smpRes.data)
-        setColumns(colRes.data)
-        setDupInfo(dupRes.data)
-      } catch (e) {
-        setError(e.message || 'Failed to load dataset')
-      } finally {
-        setLoading(false)
-      }
+    fetchAll(sampleCount)
+  }, [sampleCount])
+
+  const handleForceReload = async () => {
+    setReloading(true)
+    try {
+      await api.post('/dataset/reload')
+      await fetchAll(sampleCount)
+      setReloadNotice(true)
+      setTimeout(() => setReloadNotice(false), 3000)
+    } catch (e) {
+      setError('Reload failed: ' + e.message)
+    } finally {
+      setReloading(false)
     }
-    fetchAll()
-  }, [])
+  }
+
+  const handleExportSchema = () => {
+    const exportData = {
+      summary,
+      distribution: dist,
+      missingValues: missing,
+      columns,
+      duplicates: dupInfo,
+      exportedAt: new Date().toISOString()
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `twibot20-schema-metadata-${Date.now()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   if (loading) return <LoadingCard />
-  if (error)   return <ErrorCard message={error} />
+  if (error)   return <ErrorCard message={error} onRetry={() => { setError(null); fetchAll() }} />
 
   /* ── Distribution pie data ── */
   const pieData = dist.map(d => ({
-    name: d.label,
+    name: d.label === 'bot' ? 'Bot' : d.label === 'human' ? 'Human' : d.label,
     value: d.count,
     color: COLORS[d.label] || '#6366f1',
   }))
@@ -124,81 +177,142 @@ export default function DatasetExplorer() {
     count: m.missing_count,
   }))
 
-  /* ── Sample table columns ── */
+  /* ── Filtered columns ── */
+  const filteredColumns = columns.filter(c =>
+    c.column.toLowerCase().includes(columnSearch.toLowerCase()) ||
+    c.dtype.toLowerCase().includes(columnSearch.toLowerCase())
+  )
+
+  /* ── Filtered sample records ── */
+  const filteredSample = sample.filter(row => {
+    if (classFilter === 'bot') return row.label === 'bot'
+    if (classFilter === 'human') return row.label === 'human'
+    return true
+  })
+
   const sampleKeys = sample.length > 0 ? Object.keys(sample[0]) : []
 
   return (
     <div>
       {/* ── Page header ── */}
-      <div className="page-header">
-        <h1>Dataset Explorer</h1>
-        <p>TwiBot-20 dataset summary, quality metrics, and sample records.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <div className="page-header__kicker">
+            <span className="badge badge-primary">Schema Explorer</span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+              TWIBOT-20 CORPUS
+            </span>
+          </div>
+          <h1>Dataset Schema &amp; Quality Explorer</h1>
+          <p>
+            TwiBot-20 benchmark distribution, null value integrity, feature typing, and raw entity sample inspection.
+          </p>
+        </div>
+
+        {/* Global Action Toolbar */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            id="btn-dataset-reload"
+            className="btn btn-secondary"
+            onClick={handleForceReload}
+            disabled={reloading}
+            title="Invalidate cache and reload raw dataset records"
+          >
+            <RefreshCw size={14} className={reloading ? 'spinner' : ''} />
+            {reloading ? 'Reloading...' : reloadNotice ? 'Cache Synced!' : 'Reload Dataset'}
+          </button>
+
+          <button
+            id="btn-dataset-export"
+            className="btn btn-secondary"
+            onClick={handleExportSchema}
+            title="Download complete JSON schema description"
+          >
+            <Download size={14} />
+            Export Schema
+          </button>
+        </div>
       </div>
 
       {/* ── Demo banner ── */}
       {summary?.is_demo && <DemoBanner note={summary.data_note} />}
 
       {/* ── Overview stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 16 }}>
-        <StatCard label="Total Accounts"  value={summary?.total_rows?.toLocaleString()}    color="var(--color-accent)" />
-        <StatCard label="Bot Accounts"    value={summary?.bot_count?.toLocaleString()}     color={COLORS.bot} />
-        <StatCard label="Human Accounts"  value={summary?.human_count?.toLocaleString()}   color={COLORS.human} />
-        <StatCard label="Columns"         value={summary?.total_columns}                    color="var(--color-primary)" />
-        <StatCard label="Duplicate Rows"  value={dupInfo?.duplicate_rows}                  sub={`${dupInfo?.duplicate_pct}%`} color="var(--color-warning)" />
-        <StatCard label="Text Data"       value={summary?.has_tweet_data ? 'Yes' : 'No'}   color={summary?.has_tweet_data ? COLORS.human : COLORS.bot} />
-        <StatCard label="Network Data"    value={summary?.has_network_data ? 'Yes' : 'No'} color={summary?.has_network_data ? COLORS.human : COLORS.bot} />
+      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        <StatCard label="Total Records"   value={summary?.total_rows?.toLocaleString()}    color="var(--color-primary)" />
+        <StatCard label="Bot Entities"    value={summary?.bot_count?.toLocaleString()}     color={COLORS.bot} />
+        <StatCard label="Organic Humans"  value={summary?.human_count?.toLocaleString()}   color={COLORS.human} />
+        <StatCard label="Columns"         value={summary?.total_columns}                   color="var(--color-accent)" />
+        <StatCard label="Duplicate Rows"  value={dupInfo?.duplicate_rows}                  sub={`${dupInfo?.duplicate_pct}% redundant`} color="var(--color-warning)" />
+        <StatCard label="Tweet Text"      value={summary?.has_tweet_data ? 'Available' : 'Unavailable'} color={summary?.has_tweet_data ? COLORS.human : COLORS.bot} />
+        <StatCard label="Network Graph"   value={summary?.has_network_data ? 'Available' : 'Unavailable'} color={summary?.has_network_data ? COLORS.human : COLORS.bot} />
       </div>
 
-      {/* ── Dataset info card ── */}
-      <SectionHeader icon={Database} title="Dataset Information" />
-      <div className="card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 32px' }}>
+      {/* ── Dataset metadata card ── */}
+      <SectionHeader icon={Database} title="Dataset Metadata &amp; Extraction Spec" />
+      <div className="card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 28px' }}>
         {[
-          ['Dataset Name',   summary?.dataset_name],
-          ['Source',         summary?.dataset_source],
-          ['Total Rows',     summary?.total_rows?.toLocaleString()],
-          ['Total Columns',  summary?.total_columns],
-          ['Bot Accounts',   `${summary?.bot_count} (${dist.find(d=>d.label==='bot')?.percentage ?? 0}%)`],
-          ['Human Accounts', `${summary?.human_count} (${dist.find(d=>d.label==='human')?.percentage ?? 0}%)`],
-          ['Text (Tweets)',  summary?.has_tweet_data ? 'Available' : 'Unavailable'],
-          ['Network Graph',  summary?.has_network_data ? 'Available' : 'Unavailable'],
+          ['Dataset Identification', summary?.dataset_name],
+          ['Corpus Source URI',      summary?.dataset_source],
+          ['Row Count',              summary?.total_rows?.toLocaleString()],
+          ['Attribute Count',        `${summary?.total_columns} attributes`],
+          ['Bot Population',         `${summary?.bot_count} (${dist.find(d => d.label === 'bot')?.percentage ?? 0}%)`],
+          ['Human Population',       `${summary?.human_count} (${dist.find(d => d.label === 'human')?.percentage ?? 0}%)`],
+          ['Text Corpus (Tweets)',   summary?.has_tweet_data ? 'Active & Tokenized' : 'Unavailable'],
+          ['Follow Graph Topology',  summary?.has_network_data ? 'Active & Indexed' : 'Unavailable'],
         ].map(([k, v]) => (
           <div key={k} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 8 }}>
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k}</span>
-            <div style={{ fontWeight: 600, marginTop: 2, wordBreak: 'break-all', fontSize: '0.9rem' }}>{v ?? '—'}</div>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k}</span>
+            <div style={{ fontWeight: 600, marginTop: 2, wordBreak: 'break-all', fontSize: '0.86rem', fontFamily: 'var(--font-mono)' }}>{v ?? '—'}</div>
           </div>
         ))}
       </div>
 
       {/* ── Distribution + Missing side by side ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 32 }}>
-
+      <div className="ba-grid-2" style={{ marginTop: 24 }}>
         {/* Class distribution pie */}
-        <div>
-          <SectionHeader icon={CheckCircle} title="Class Distribution" />
-          <div className="card" style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <div className="section-title">
+                <CheckCircle size={16} style={{ color: 'var(--color-success)' }} />
+                Class Label Proportion
+              </div>
+              <div className="section-subtitle">Binary ratio between automated bots and organic humans</div>
+            </div>
+          </div>
+          <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" outerRadius={90}
-                     dataKey="value" label={({ name, percentage }) => `${name} ${percentage}%`}
+                <Pie data={pieData} cx="50%" cy="50%" outerRadius={90} innerRadius={55}
+                     dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                      labelLine={false}>
                   {pieData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
+                    <Cell key={i} fill={entry.color} stroke="rgba(15,23,42,0.8)" strokeWidth={2} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(val, name) => [`${val} accounts`, name]} />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: '0.78rem' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Missing values bar chart */}
-        <div>
-          <SectionHeader icon={AlertTriangle} title="Missing Values (Top 12 Columns)" />
-          <div className="card" style={{ height: 280 }}>
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <div className="section-title">
+                <AlertTriangle size={16} style={{ color: 'var(--color-warning)' }} />
+                Missing Attributes (Top 12 Columns)
+              </div>
+              <div className="section-subtitle">Percent of null or unpopulated values across corpus</div>
+            </div>
+          </div>
+          <div style={{ height: 260 }}>
             {missingBar.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-success)' }}>
-                <CheckCircle size={20} style={{ marginRight: 8 }} /> No missing values
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-success)', gap: 8 }}>
+                <CheckCircle size={18} /> Zero missing values detected in corpus
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -207,7 +321,7 @@ export default function DatasetExplorer() {
                          tick={{ fill: 'var(--color-text-muted)', fontSize: 11 }} />
                   <YAxis type="category" dataKey="col" width={120}
                          tick={{ fill: 'var(--color-text-muted)', fontSize: 11 }} />
-                  <Tooltip formatter={(v, _, p) => [`${v}% (${p.payload.count})`, 'Missing']} />
+                  <Tooltip formatter={(v, _, p) => [`${v}% (${p.payload.count} nulls)`, 'Missing']} />
                   <Bar dataKey="pct" fill={BAR_COLOR} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -216,55 +330,167 @@ export default function DatasetExplorer() {
         </div>
       </div>
 
-      {/* ── Column info table ── */}
-      <SectionHeader icon={Database} title="Column Details" />
-      <div className="card" style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+      {/* ── Column info table with dynamic search ── */}
+      <SectionHeader
+        icon={Layers}
+        title={`Column Attribute Schema (${filteredColumns.length} Attributes)`}
+        rightContent={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, color: 'var(--color-text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Filter attributes by name or type..."
+              value={columnSearch}
+              onChange={e => setColumnSearch(e.target.value)}
+              style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '5px 10px 5px 30px',
+                fontSize: '0.78rem',
+                color: 'var(--color-text)',
+                width: 240,
+                outline: 'none',
+              }}
+            />
+          </div>
+        }
+      />
+      <div className="card table-wrap" style={{ maxHeight: 380, overflowY: 'auto' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              {['Column', 'Data Type', 'Null Count', 'Null %', 'Unique Values'].map(h => (
-                <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.72rem' }}>{h}</th>
-              ))}
+            <tr>
+              <th>Column Name</th>
+              <th>Data Type</th>
+              <th>Null Count</th>
+              <th>Null Percentage</th>
+              <th>Cardinality (Unique)</th>
             </tr>
           </thead>
           <tbody>
-            {columns.map((col, i) => (
-              <tr key={col.column} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                <td style={{ padding: '7px 12px', fontWeight: 600 }}>{col.column}</td>
-                <td style={{ padding: '7px 12px', color: 'var(--color-accent)', fontFamily: 'monospace' }}>{col.dtype}</td>
-                <td style={{ padding: '7px 12px' }}>{col.null_count}</td>
-                <td style={{ padding: '7px 12px', color: col.null_pct > 30 ? 'var(--color-danger)' : col.null_pct > 5 ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>{col.null_pct}%</td>
-                <td style={{ padding: '7px 12px' }}>{col.unique_count}</td>
+            {filteredColumns.map(col => (
+              <tr key={col.column}>
+                <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>
+                  {col.column}
+                </td>
+                <td>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: '0.74rem',
+                    color: 'var(--color-accent)', background: 'var(--color-surface-2)',
+                    padding: '2px 6px', borderRadius: 'var(--radius-xs)', border: '1px solid var(--color-border)'
+                  }}>
+                    {col.dtype}
+                  </span>
+                </td>
+                <td className="mono-val">{col.null_count}</td>
+                <td>
+                  <span className="mono-val" style={{
+                    color: col.null_pct > 30 ? 'var(--color-danger)' : col.null_pct > 5 ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                    fontWeight: col.null_pct > 0 ? 600 : 400
+                  }}>
+                    {col.null_pct}%
+                  </span>
+                </td>
+                <td className="mono-val">{col.unique_count.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* ── Sample records table ── */}
-      <SectionHeader icon={Database} title="Sample Records (First 10)" />
-      <div className="card" style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+      {/* ── Sample records table with class filtering, count switcher, and dossier audit links ── */}
+      <SectionHeader
+        icon={Database}
+        title="Sample Entity Records"
+        rightContent={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Class filter */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[
+                ['all', 'All'],
+                ['bot', 'Bots'],
+                ['human', 'Humans'],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  className={`tab-btn${classFilter === key ? ' active' : ''}`}
+                  onClick={() => setClassFilter(key)}
+                  style={{ padding: '3px 8px', fontSize: '0.72rem' }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Row limit switcher */}
+            <select
+              value={sampleCount}
+              onChange={e => setSampleCount(Number(e.target.value))}
+              className="scatter-select"
+              style={{ padding: '3px 8px', fontSize: '0.72rem', height: 26 }}
+              title="Number of sample records to fetch"
+            >
+              <option value={10}>10 records</option>
+              <option value={20}>20 records</option>
+              <option value={35}>35 records</option>
+              <option value={50}>50 records</option>
+            </select>
+          </div>
+        }
+      />
+      <div className="card table-wrap" style={{ overflowX: 'auto' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <tr>
+              <th>Action</th>
               {sampleKeys.map(k => (
-                <th key={k} style={{ padding: '8px 10px', textAlign: 'left', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>{k}</th>
+                <th key={k} style={{ whiteSpace: 'nowrap' }}>{k}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sample.map((row, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                {sampleKeys.map(k => {
-                  const val = row[k]
-                  let display = val === null || val === undefined ? <span style={{ color: 'var(--color-text-muted)' }}>null</span> : String(val)
-                  if (k === 'label') {
-                    display = <span className={`badge badge--${val === 'bot' ? 'error' : 'success'}`}>{val}</span>
-                  }
-                  return <td key={k} style={{ padding: '6px 10px', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{display}</td>
-                })}
-              </tr>
-            ))}
+            {filteredSample.map((row, i) => {
+              const accountId = row.screen_name || row.user_id || row.id_str
+              return (
+                <tr key={i}>
+                  <td>
+                    {accountId ? (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '2px 7px', fontSize: '0.7rem', gap: 3 }}
+                        onClick={() => onNavigate && onNavigate('investigate', { query: accountId })}
+                        title={`Open forensic audit for ${accountId}`}
+                      >
+                        Audit
+                        <ChevronRight size={11} />
+                      </button>
+                    ) : (
+                      <span style={{ color: 'var(--color-text-dim)' }}>—</span>
+                    )}
+                  </td>
+                  {sampleKeys.map(k => {
+                    const val = row[k]
+                    let display = val === null || val === undefined ? (
+                      <span style={{ color: 'var(--color-text-dim)' }}>null</span>
+                    ) : String(val)
+
+                    if (k === 'label') {
+                      display = <span className={`label-badge label-badge--${val}`}>{val}</span>
+                    } else if (k === 'user_id' || k === 'id_str') {
+                      display = <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-dim)', fontSize: '0.74rem' }}>{val}</span>
+                    } else if (k === 'screen_name') {
+                      display = <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)', fontWeight: 600 }}>@{val}</span>
+                    }
+
+                    return (
+                      <td key={k} style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {display}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

@@ -3,9 +3,11 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts'
-import axios from 'axios'
-
-const API = 'http://localhost:8000'
+import {
+  Search, ShieldAlert, ShieldCheck, AlertTriangle, ArrowLeft,
+  CheckCircle2, User, ChevronRight, X, Download, Bookmark, BookmarkCheck
+} from 'lucide-react'
+import api from '../api/client'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
@@ -57,7 +59,7 @@ function ProbabilityBar({ model, botProb, humanProb, prediction }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, alignItems: 'center' }}>
         <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>{model}</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', color: '#ef4444' }}>Bot {(botProb * 100).toFixed(1)}%</span>
+          <span style={{ fontSize: '0.78rem', color: '#ef4444', fontFamily: 'var(--font-mono)' }}>Bot {(botProb * 100).toFixed(1)}%</span>
           <span className={`label-badge label-badge--${prediction}`}>{prediction}</span>
         </div>
       </div>
@@ -85,6 +87,7 @@ function ReasonCard({ flag, weight, detail }) {
         minWidth: 36, height: 36, borderRadius: '50%',
         background: `${color}20`, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color,
+        fontFamily: 'var(--font-mono)'
       }}>
         +{weight}
       </div>
@@ -109,7 +112,7 @@ function SearchBar({ onSearch }) {
     if (val.trim().length < 2) { setSuggestions([]); setShowDrop(false); return }
     debounceRef.current = setTimeout(async () => {
       try {
-        const r = await axios.get(`${API}/api/investigate/search?q=${encodeURIComponent(val)}&n=8`)
+        const r = await api.get(`/investigate/search?q=${encodeURIComponent(val)}&n=8`)
         setSuggestions(r.data)
         setShowDrop(r.data.length > 0)
       } catch (_) {}
@@ -149,14 +152,10 @@ function SearchBar({ onSearch }) {
         <button
           id="account-search-btn"
           type="submit"
-          style={{
-            padding: '10px 20px', borderRadius: 'var(--radius-sm)',
-            background: 'var(--color-primary)', color: '#fff',
-            fontWeight: 700, fontSize: '0.85rem',
-            border: '1px solid rgba(99,102,241,0.5)',
-          }}
+          className="btn btn-primary"
         >
-          🔍 Investigate
+          <Search size={14} />
+          Investigate
         </button>
       </form>
 
@@ -180,13 +179,14 @@ function SearchBar({ onSearch }) {
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <span className={`label-badge label-badge--${acc.label}`}>{acc.label}</span>
-              <span style={{ color: 'var(--color-accent)', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+              <span style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                 @{acc.screen_name}
               </span>
               <span style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>{acc.name}</span>
               {acc.suspicion_score !== undefined && (
-                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#f59e0b' }}>
-                  ⚠️ {acc.suspicion_score}
+                <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#f59e0b', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <AlertTriangle size={12} />
+                  {acc.suspicion_score}
                 </span>
               )}
             </div>
@@ -208,8 +208,8 @@ function AccountListPanel({ onSelectAccount }) {
   const fetchList = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await axios.get(
-        `${API}/api/investigate/accounts?page=${page}&page_size=20&label=${labelFilter}&sort_by=${sortBy}`
+      const r = await api.get(
+        `/investigate/accounts?page=${page}&page_size=20&label=${labelFilter}&sort_by=${sortBy}`
       )
       setData(r.data)
     } catch (_) {}
@@ -246,7 +246,7 @@ function AccountListPanel({ onSelectAccount }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Screen Name</th><th>Label</th>
+                  <th>Screen Name</th><th>Class Label</th>
                   <th>Suspicion ↓</th><th>Activity</th>
                   <th>Followers</th><th>FF Ratio</th><th>Action</th>
                 </tr>
@@ -254,7 +254,7 @@ function AccountListPanel({ onSelectAccount }) {
               <tbody>
                 {data.accounts.map((acc, i) => (
                   <tr key={i} style={{ cursor: 'pointer' }}>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--color-accent)', fontSize: '0.8rem' }}>
+                    <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)', fontSize: '0.8rem' }}>
                       @{acc.screen_name || acc.user_id}
                     </td>
                     <td><span className={`label-badge label-badge--${acc.label}`}>{acc.label}</span></td>
@@ -267,21 +267,22 @@ function AccountListPanel({ onSelectAccount }) {
                             ? '#ef4444' : (acc.suspicion_score || 0) >= 40
                             ? '#f59e0b' : '#10b981',
                         }} />
-                        <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem' }}>
+                        <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
                           {(acc.suspicion_score || 0).toFixed(0)}
                         </span>
                       </div>
                     </td>
-                    <td style={{ color: '#22d3ee' }}>{(acc.activity_score || 0).toFixed(1)}</td>
-                    <td>{(acc.followers_count || 0).toLocaleString()}</td>
-                    <td>{(acc.ff_ratio || 0).toFixed(2)}</td>
+                    <td style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{(acc.activity_score || 0).toFixed(1)}</td>
+                    <td className="mono-val">{(acc.followers_count || 0).toLocaleString()}</td>
+                    <td className="mono-val">{(acc.ff_ratio || 0).toFixed(2)}</td>
                     <td>
                       <button
-                        className="tab-btn"
-                        style={{ padding: '3px 10px', fontSize: '0.72rem' }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '3px 9px', fontSize: '0.72rem', gap: 4 }}
                         onClick={() => onSelectAccount(acc.screen_name || acc.user_id)}
                       >
-                        Investigate →
+                        Investigate
+                        <ChevronRight size={11} />
                       </button>
                     </td>
                   </tr>
@@ -291,14 +292,14 @@ function AccountListPanel({ onSelectAccount }) {
           </div>
           {/* Pagination */}
           <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}>
-            <button className="tab-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-              ← Prev
+            <button className="btn btn-secondary btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+              Prev
             </button>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              Page {data.page} / {data.pages} &nbsp;·&nbsp; {data.total.toLocaleString()} accounts
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
+              Page {data.page} / {data.pages} · {data.total.toLocaleString()} accounts
             </span>
-            <button className="tab-btn" disabled={page >= data.pages} onClick={() => setPage(p => p + 1)}>
-              Next →
+            <button className="btn btn-secondary btn-sm" disabled={page >= data.pages} onClick={() => setPage(p => p + 1)}>
+              Next
             </button>
           </div>
         </>
@@ -312,20 +313,39 @@ function InvestigationReport({ query, onClear }) {
   const [report,  setReport]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
+  const [flagged, setFlagged] = useState(false)
 
   useEffect(() => {
     setLoading(true); setError(null); setReport(null)
-    axios.get(`${API}/api/investigate/account?query=${encodeURIComponent(query)}`)
+    api.get(`/investigate/account?query=${encodeURIComponent(query)}`)
       .then(r => setReport(r.data))
       .catch(e => setError(e.response?.data?.detail || e.message))
       .finally(() => setLoading(false))
   }, [query])
 
+  const handleExportDossier = () => {
+    if (!report) return
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dossier_${report.identity.screen_name || report.identity.user_id}_${Date.now()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (loading) return <div className="loading-box"><div className="spinner" /> Investigating account…</div>
   if (error) return (
     <div className="error-box">
-      ⚠️ {error}
-      <button className="btn-retry" onClick={onClear}>← Back</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <AlertTriangle size={16} />
+        <span>{error}</span>
+      </div>
+      <button className="btn btn-secondary btn-sm" onClick={onClear}>
+        <ArrowLeft size={13} /> Back to Search
+      </button>
     </div>
   )
   if (!report) return null
@@ -336,13 +356,12 @@ function InvestigationReport({ query, onClear }) {
   const verdictColor = verdict_color === 'danger' ? '#ef4444'
     : verdict_color === 'warning' ? '#f59e0b' : '#10b981'
 
-  // Radar data: compare account vs bot avg vs human avg (top 6 features)
+  // Radar data
   const radarFeatures = ['ff_ratio', 'tweets_per_day', 'suspicion_score',
     'activity_score', 'description_length', 'account_age_days']
   const radarData = radarFeatures.map(f => {
     const comp = population_comparison?.find(c => c.feature === f)
     if (!comp) return null
-    // Normalize 0-1 for radar
     const maxVal = Math.max(comp.account, comp.bot_avg, comp.human_avg, 1)
     return {
       feature: f.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -352,7 +371,7 @@ function InvestigationReport({ query, onClear }) {
     }
   }).filter(Boolean)
 
-  // Feature comparison bar (top 8)
+  // Feature comparison bar
   const featureBar = (population_comparison || []).slice(0, 8).map(c => ({
     feature:  c.feature.replace(/_/g, ' '),
     account:  parseFloat(c.account.toFixed(3)),
@@ -363,32 +382,59 @@ function InvestigationReport({ query, onClear }) {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <button className="tab-btn" onClick={onClear} style={{ padding: '6px 14px' }}>
-          ← Back
-        </button>
-        <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: verdictColor }}>
-            @{identity.screen_name || identity.user_id}
-          </h2>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
-            {identity.name} &nbsp;·&nbsp;
-            <span className={`label-badge label-badge--${identity.label}`}>{identity.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button className="btn btn-secondary btn-sm" onClick={onClear}>
+            <ArrowLeft size={14} />
+            Back to Directory
+          </button>
+          <div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: verdictColor, fontFamily: 'var(--font-mono)' }}>
+              @{identity.screen_name || identity.user_id}
+            </h2>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
+              {identity.name} &nbsp;·&nbsp;
+              <span className={`label-badge label-badge--${identity.label}`}>{identity.label}</span>
+            </div>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className={`btn ${flagged ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+            onClick={() => setFlagged(!flagged)}
+          >
+            {flagged ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+            {flagged ? 'Watchlisted' : 'Watchlist Entity'}
+          </button>
+          <button className="btn btn-secondary btn-sm" onClick={handleExportDossier}>
+            <Download size={14} />
+            Export Dossier JSON
+          </button>
         </div>
       </div>
 
       {/* Verdict banner */}
       <div style={{
-        padding: '16px 24px', borderRadius: 'var(--radius-sm)', marginBottom: 28,
+        padding: '16px 20px', borderRadius: 'var(--radius-sm)', marginBottom: 28,
         background: `${verdictColor}12`, border: `1px solid ${verdictColor}40`,
         display: 'flex', alignItems: 'center', gap: 16,
       }}>
-        <span style={{ fontSize: '2rem' }}>
-          {verdict_color === 'danger' ? '🚨' : verdict_color === 'warning' ? '⚠️' : '✅'}
-        </span>
+        <div style={{
+          width: 44, height: 44, borderRadius: 'var(--radius-sm)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: `${verdictColor}20`, border: `1px solid ${verdictColor}40`, flexShrink: 0
+        }}>
+          {verdict_color === 'danger' ? (
+            <ShieldAlert size={26} style={{ color: verdictColor }} />
+          ) : verdict_color === 'warning' ? (
+            <AlertTriangle size={26} style={{ color: verdictColor }} />
+          ) : (
+            <ShieldCheck size={26} style={{ color: verdictColor }} />
+          )}
+        </div>
         <div>
-          <div style={{ fontWeight: 800, color: verdictColor, fontSize: '1.1rem' }}>{verdict}</div>
+          <div style={{ fontWeight: 800, color: verdictColor, fontSize: '1.05rem', letterSpacing: '-0.01em' }}>{verdict}</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
             Avg bot probability across {ml_predictions.length} models: {' '}
             <strong style={{ color: verdictColor }}>{(scores.avg_bot_prob * 100).toFixed(1)}%</strong>
@@ -422,7 +468,7 @@ function InvestigationReport({ query, onClear }) {
               ['Following',    identity.following?.toLocaleString()],
               ['Total Tweets', identity.statuses?.toLocaleString()],
               ['Account Age',  `${identity.account_age_days} days`],
-              ['Verified',     identity.verified ? '✅ Yes' : '❌ No'],
+              ['Verified',     identity.verified ? 'Verified Identity' : 'Standard / Unverified'],
             ].map(([k, v]) => (
               <div key={k} style={{
                 display: 'flex', justifyContent: 'space-between',
@@ -430,7 +476,7 @@ function InvestigationReport({ query, onClear }) {
                 borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
               }}>
                 <span style={{ color: 'var(--color-text-muted)' }}>{k}</span>
-                <span style={{ fontWeight: 600, color: 'var(--color-text)' }}>{v || '—'}</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-text)', fontFamily: 'var(--font-mono)' }}>{v || '—'}</span>
               </div>
             ))}
           </div>
@@ -518,7 +564,7 @@ function InvestigationReport({ query, onClear }) {
       <div className="card">
         <div className="section-header">
           <div className="section-title">Full Feature Table</div>
-          <div className="section-subtitle">Account values vs bot & human population means</div>
+          <div className="section-subtitle">Account values vs bot &amp; human population means</div>
         </div>
         <div className="table-wrap">
           <table className="data-table">
@@ -534,12 +580,12 @@ function InvestigationReport({ query, onClear }) {
             <tbody>
               {(population_comparison || []).map((row, i) => (
                 <tr key={i}>
-                  <td style={{ fontFamily: 'monospace', color: 'var(--color-accent)', fontSize: '0.8rem' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)', fontSize: '0.8rem' }}>
                     {row.feature}
                   </td>
-                  <td style={{ fontWeight: 700, color: verdictColor }}>{row.account}</td>
-                  <td style={{ color: '#ef4444' }}>{row.bot_avg}</td>
-                  <td style={{ color: '#22d3ee' }}>{row.human_avg}</td>
+                  <td style={{ fontWeight: 700, color: verdictColor, fontFamily: 'var(--font-mono)' }}>{row.account}</td>
+                  <td style={{ color: '#ef4444', fontFamily: 'var(--font-mono)' }}>{row.bot_avg}</td>
+                  <td style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{row.human_avg}</td>
                   <td>
                     <span className={`label-badge label-badge--${row.closer_to}`}>{row.closer_to}</span>
                   </td>
@@ -554,12 +600,18 @@ function InvestigationReport({ query, onClear }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function AccountInvestigation() {
+export default function AccountInvestigation({ initialQuery, onNavigate }) {
   const [stats,       setStats]       = useState(null)
-  const [activeQuery, setActiveQuery] = useState(null)
+  const [activeQuery, setActiveQuery] = useState(initialQuery || null)
 
   useEffect(() => {
-    axios.get(`${API}/api/investigate/stats`)
+    if (initialQuery) {
+      setActiveQuery(initialQuery)
+    }
+  }, [initialQuery])
+
+  useEffect(() => {
+    api.get('/investigate/stats')
       .then(r => setStats(r.data))
       .catch(() => {})
   }, [])
@@ -570,8 +622,12 @@ export default function AccountInvestigation() {
   return (
     <div>
       <div className="page-header">
-        <h1>Account Investigation</h1>
-        <p>Phase 7 — Deep-dive bot probability, feature breakdown &amp; population comparison for any account</p>
+        <div className="page-header__kicker">
+          <span className="badge badge-primary">Forensic Dossier</span>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>PHASE 7 AUDIT</span>
+        </div>
+        <h1>Account Investigation &amp; Threat Forensics</h1>
+        <p>In-depth entity behavioural profiling, multi-classifier probability estimations, and population divergence metrics.</p>
       </div>
 
       {/* Stats bar */}

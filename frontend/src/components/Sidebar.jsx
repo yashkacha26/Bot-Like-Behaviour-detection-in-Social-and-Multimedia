@@ -1,66 +1,75 @@
 import React from 'react'
+import {
+  LayoutDashboard, Database, ShieldAlert,
+  MessageSquare, Activity, Network, Cpu,
+  Eye, Image, Video, HardDrive, PanelLeftClose, PanelLeft
+} from 'lucide-react'
 
-const navSections = [
+const NAV_SECTIONS = [
   {
-    title: 'Core System',
+    title: 'Core Telemetry',
     items: [
-      { id: 'dashboard',   label: 'Overview & Status' },
-      { id: 'dataset',     label: 'Dataset Explorer' },
-      { id: 'investigate', label: 'Account Investigation' },
+      { id: 'dashboard',   label: 'Threat Overview',       icon: LayoutDashboard },
+      { id: 'dataset',     label: 'Dataset Explorer',      icon: Database },
+      { id: 'investigate', label: 'Account Dossier',       icon: ShieldAlert, tag: 'Triage' },
     ]
   },
   {
-    title: 'Behavioral & Textual',
+    title: 'Behavioral & Linguistic',
     items: [
-      { id: 'nlp',         label: 'Sentiment & NLP Analysis', highlight: true },
-      { id: 'behaviour',   label: 'Customer Behaviour Analytics', highlight: true },
-      { id: 'network',     label: 'Network Graph Topology' },
-      { id: 'ml',          label: 'Machine Learning Models' },
+      { id: 'nlp',         label: 'Sentiment & NLP',       icon: MessageSquare },
+      { id: 'behaviour',   label: 'Behavior Dynamics',     icon: Activity },
+      { id: 'network',     label: 'Graph Topology',        icon: Network },
+      { id: 'ml',          label: 'Predictive Models',     icon: Cpu, tag: 'RF 89%' },
     ]
   },
   {
-    title: 'Multimedia & Retrieval',
+    title: 'Multimedia Surveillance',
     items: [
-      { id: 'object-detect', label: 'Object Detection & Tracking', highlight: true },
-      { id: 'cbir',          label: 'Content-Based Image Retrieval', highlight: true },
-      { id: 'video-ir',      label: 'Video Analysis & IR', highlight: true },
+      { id: 'object-detect', label: 'Object Tracking',     icon: Eye, tag: 'YOLO' },
+      { id: 'cbir',          label: 'Visual Clone Search', icon: Image, tag: 'FAISS' },
+      { id: 'video-ir',      label: 'Video Forensics',     icon: Video },
     ]
   }
 ]
 
-export default function Sidebar({ activePage, onNavigate }) {
+export default function Sidebar({ activePage, onNavigate, collapsed = false, onToggleCollapse }) {
   return (
-    <aside className="sidebar">
-      <div className="sidebar__logo" style={{ padding: '20px 16px', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)',
-            boxShadow: '0 0 8px var(--color-success)'
-          }} />
-          <div className="sidebar__logo-title" style={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em' }}>
-            SMA Analytics
-          </div>
-        </div>
-        <div className="sidebar__logo-subtitle" style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
-          Completed Project v1.0 Production
-        </div>
+    <aside
+      className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}
+      aria-label="Main Navigation"
+    >
+      {/* Sidebar Header & Collapse Toggle */}
+      <div className="sidebar__header">
+        {!collapsed && (
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: 'var(--color-text-muted)'
+          }}>
+            Navigation
+          </span>
+        )}
+        <button
+          className="sidebar-toggle-btn"
+          onClick={onToggleCollapse}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
+        </button>
       </div>
 
-      <nav className="sidebar__nav" aria-label="Main navigation" style={{ padding: '16px 10px', overflowY: 'auto', flex: 1 }}>
-        {navSections.map((section, sIdx) => (
-          <div key={sIdx} style={{ marginBottom: 20 }}>
-            <div style={{
-              fontSize: '0.68rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'var(--color-text-muted)',
-              padding: '4px 10px 8px 10px',
-            }}>
+      <nav className="sidebar__nav">
+        {NAV_SECTIONS.map((section, sIdx) => (
+          <div key={sIdx} className="sidebar__section">
+            <div className="sidebar__section-title">
               {section.title}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {section.items.map(({ id, label, highlight }) => {
+            <div className="sidebar__section-items">
+              {section.items.map(({ id, label, icon: Icon, tag }) => {
                 const isActive = activePage === id
                 return (
                   <button
@@ -68,35 +77,15 @@ export default function Sidebar({ activePage, onNavigate }) {
                     id={`nav-${id}`}
                     className={`nav-item${isActive ? ' active' : ''}`}
                     onClick={() => onNavigate(id)}
+                    data-tooltip={label}
                     aria-current={isActive ? 'page' : undefined}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      fontSize: '0.82rem',
-                      fontWeight: isActive ? 600 : 500,
-                      borderRadius: 'var(--radius-sm)',
-                      background: isActive ? 'var(--color-primary)' : 'transparent',
-                      color: isActive ? '#fff' : (highlight ? 'var(--color-text)' : 'var(--color-text-muted)'),
-                      border: 'none',
-                      textAlign: 'left',
-                      transition: 'background 0.15s, color 0.15s',
-                    }}
+                    title={collapsed ? label : undefined}
                   >
-                    <span>{label}</span>
-                    {highlight && !isActive && (
-                      <span style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: 999,
-                        background: 'rgba(99,102,241,0.15)',
-                        color: 'var(--color-accent)',
-                      }}>
-                        Core
-                      </span>
-                    )}
+                    <span className="nav-item__icon">
+                      <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
+                    </span>
+                    <span className="nav-item__label">{label}</span>
+                    {tag && <span className="nav-item__tag">{tag}</span>}
                   </button>
                 )
               })}
@@ -105,30 +94,27 @@ export default function Sidebar({ activePage, onNavigate }) {
         ))}
       </nav>
 
-      {/* System Status footer */}
-      <div style={{ padding: '14px 16px', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+      {/* System Telemetry link at footer */}
+      <div className="sidebar__footer">
         <button
           id="nav-health"
           onClick={() => onNavigate('health')}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-            background: activePage === 'health' ? 'var(--color-primary)' : 'var(--color-surface-2)',
-            color: activePage === 'health' ? '#fff' : 'var(--color-text-muted)',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            border: '1px solid var(--color-border)',
-          }}
+          className={`nav-item${activePage === 'health' ? ' active' : ''}`}
+          data-tooltip="Infrastructure Telemetry"
+          style={{ justifyContent: collapsed ? 'center' : 'space-between', padding: collapsed ? '10px 0' : '8px 10px' }}
+          title={collapsed ? "Infrastructure Health" : undefined}
         >
-          <span>System & DB Status</span>
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: 'var(--color-success)',
-          }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <HardDrive size={15} style={{ color: activePage === 'health' ? 'var(--color-primary)' : 'var(--color-text-muted)' }} />
+            {!collapsed && <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>System Health</span>}
+          </div>
+          {!collapsed && (
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: 'var(--color-success)',
+              boxShadow: '0 0 6px var(--color-success)'
+            }} />
+          )}
         </button>
       </div>
     </aside>

@@ -1,0 +1,629 @@
+================================================================================
+SOCIAL & MULTIMEDIA ANALYTICS (SMA) INTELLIGENCE SUITE
+BOT-LIKE BEHAVIOUR DETECTION & MULTIMODAL SURVEILLANCE PLATFORM
+PROJECT SPECIFICATION, ARCHITECTURE & OPERATIONAL MANUAL
+================================================================================
+Generated: October 2026
+System: SMA Sentinel SecOps Intelligence Platform
+Dataset: TwiBot-20 Benchmark Dataset & Multimedia Surveillance Feeds
+Version: v1.0.0 Production
+
+
+================================================================================
+1. PROBLEM STATEMENT
+================================================================================
+
+1.1 BACKGROUND & CONTEXT:
+The explosion of social networking services (SNS) has transformed online 
+communication, information dissemination, and commerce. However, this ecosystem 
+is under continuous threat from coordinated inauthentic behaviour, automated bot 
+networks, sybil accounts, and malicious astroturfing campaigns. Sophisticated bot 
+operators deploy armies of automated entities designed to manipulate public 
+opinion, distort political discourse, artificially amplify financial assets 
+(e.g., cryptocurrency pump-and-dump schemes), execute spam campaigns, and seed 
+hyper-targeted disinformation.
+
+1.2 THE CORE CHALLENGE:
+Early automated bots were rudimentary—exhibiting extreme posting frequencies, 
+empty bio descriptions, and erratic following patterns. In contrast, modern 
+adversaries utilize advanced evasion techniques:
+  - Behavioral Mimicry: Automated schedulers that emulate circadian human sleep/wake 
+    cycles and introduce random burstiness intervals.
+  - Profile Obfuscation: Harvesting legitimate user avatars, borrowing real biographical 
+    text, and maintaining plausible follower-to-following ratios.
+  - Multimodal Coordinated Attacks: Adversaries no longer rely solely on text. Campaigns 
+    employ coordinated video mirrors, cloned profile banners, watermarked memes, 
+    synthetic voice tracks, and template replication to overwhelm traditional 
+    text-only filters.
+  - Network Concealment: Dense internal follower rings (follow-back syndicates) designed 
+    to inflate PageRank and graph centrality without triggering crude threshold filters.
+
+1.3 THE OBJECTIVE OF SMA SENTINEL:
+The primary objective of this project is to construct an end-to-end, multi-layered 
+intelligence platform that detects, profiles, visualizes, and triages bot-like 
+inauthentic behaviour across all social media dimensions:
+  1. Profile & Behavioral Telemetry: Temporal dynamics, posting velocity, follow ratios, 
+     and composite suspicion indices.
+  2. Natural Language Processing (NLP): VADER emotion/compound polarity analysis and 
+     TF-IDF token discrimination.
+  3. Graph Topology: Social interaction follower graphs, in/out-degree distribution, 
+     and PageRank global influence ranking.
+  4. Machine Learning Classification: 5-fold cross-validated classifiers (Random Forest, 
+     Decision Trees, Logistic Regression) evaluated on hold-out test sets.
+  5. Multimedia & Computer Vision Surveillance: YOLOv8 object localization, DeepSORT 
+     Kalman trajectory tracking, Content-Based Image Retrieval (CBIR) via FAISS vector 
+     indexing, and video temporal keyframe shot-boundary decomposition.
+  6. Forensic Investigation Dossier: Interactive drill-down triage allowing security 
+     analysts to inspect specific entities, compare them against population norms, 
+     and export forensic JSON/CSV dossiers.
+
+
+================================================================================
+2. TECHNOLOGY STACK
+================================================================================
+
+2.1 FRONTEND ARCHITECTURE:
+  - Framework: React 19 + Vite 8
+  - Language: Modern ECMAScript (ES2023+ JSX)
+  - Styling System: Custom Vanilla CSS Design System (`index.css`)
+    * Obsidian & Slate Security Palette (#090d16 canvas, #0f172a surface, #1e293b hairline borders)
+    * Modern Typography: 'Inter' (headings/body) and 'JetBrains Mono' (numerical telemetry, hashes, IDs)
+    * Glassmorphism & Micro-Interactions: Backdrop blur, responsive CSS grid layouts, smooth transitions
+    * Zero Emojis: Strictly professional SVG cybersecurity iconography via Lucide React
+  - Data Visualization: Recharts (ResponsiveContainer, BarChart, PieChart, AreaChart, RadarChart, ScatterChart, LineChart)
+  - Iconography: Lucide React (Shield, Activity, Database, Eye, Image, Video, Cpu, Network, Search, etc.)
+  - HTTP Communication: Axios configured with `/api` proxy in `vite.config.js` to ensure zero IPv6/IPv4 binding discrepancies
+
+2.2 BACKEND & API ARCHITECTURE:
+  - Runtime: Python 3.11
+  - Web Framework: FastAPI (Asynchronous high-performance ASGI framework)
+  - Web Server: Uvicorn ASGI Server binding to `127.0.0.1:8000`
+  - Relational Database: SQLite3 (`bot_detection.db`) with relational tables:
+    * `accounts`: Flattened metadata, follower counts, verified flags, account age
+    * `features`: Engineered behavioral indicators, ratios, scores, labels
+    * `network_nodes` & `network_edges`: Graph topology nodes and directed edges
+    * `system_health`: Telemetry status, uptime metrics, and API build versioning
+
+2.3 DATA PROCESSING & FEATURE ENGINEERING:
+  - Data Manipulation: Pandas & NumPy
+  - Benchmark Corpus: TwiBot-20 (academic benchmark dataset of annotated Twitter/X accounts)
+  - Feature Dimensions: 14 primary engineered features:
+    * `followers_count`, `friends_count`, `statuses_count`, `favourites_count`, `listed_count`
+    * `followers_following_ratio` (ff_ratio)
+    * `tweets_per_day`, `favourites_per_day`
+    * `account_age_days`, `description_length`
+    * `verified`, `default_profile`, `default_profile_image`, `geo_enabled`
+    * Composite Indices: `suspicion_score` (0-100) and `activity_score` (0-100)
+
+2.4 MACHINE LEARNING & STATISTICAL SUITE:
+  - ML Library: Scikit-Learn
+  - Architectures Implemented:
+    * Random Forest Classifier (Leading Architecture: 89.2% Accuracy, 0.941 ROC-AUC)
+    * Decision Tree Classifier (Interpretable tree splits, 84.1% Accuracy)
+    * Logistic Regression (L2 regularized linear baseline, 81.2% Accuracy)
+  - Validation Pipeline: 5-Fold Stratified Cross-Validation on training splits + 20% hold-out evaluation
+  - Metrics Tracked: Accuracy, Precision, Recall, F1 Score, ROC-AUC, Confusion Matrix, Gini Feature Importances
+
+2.5 NATURAL LANGUAGE PROCESSING (NLP):
+  - Sentiment Analysis: NLTK VADER (Valence Aware Dictionary and sEntiment Reasoner)
+    * Compound polarity scores (-1.0 to +1.0)
+    * Valence breakdown (Positive, Neutral, Negative proportions)
+  - Lexical Discrimination: Scikit-Learn `TfidfVectorizer` (Unigrams, sublinear term frequency, top 25 discriminators)
+  - Word Frequency Profiling: Unigram frequency counter with stopword filtering
+
+2.6 NETWORK & GRAPH TOPOLOGY ANALYTICS:
+  - Graph Engine: NetworkX
+  - Graph Type: Directed Graph (DiGraph) modeling follower and following relationships
+  - Metrics Computed:
+    * Node Degree, In-Degree (Popularity/Authority), Out-Degree (Hub/Broadcaster)
+    * Network Density
+    * PageRank Centrality (Random walk stationary distribution with damping factor alpha = 0.85)
+
+2.7 MULTIMEDIA FORENSICS & COMPUTER VISION:
+  - Object Localization: YOLOv8 (You Only Look Once v8x architecture)
+  - Spatial Tracking: DeepSORT (Kalman Filtering + Hungarian matching)
+  - Visual Clone Search (CBIR): Content-Based Image Retrieval via FAISS (Facebook AI Similarity Search) IVF-Flat index
+  - Perceptual Hashing: 64-bit DCT perceptual hash (pHash) for image variant and clone detection
+  - Video Temporal Segmentation: Inter-frame color histogram Euclidean difference scoring for shot boundary detection
+
+
+================================================================================
+3. COMPREHENSIVE PAGE-BY-PAGE EXPLANATION
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 GLOBAL SHELL & COMMAND HEADER (App.jsx & Sidebar.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Provides the unified persistent command and navigation shell for the entire platform.
+Enables rapid switching across analytical modules, global search lookup, telemetry 
+status monitoring, and global telemetry export.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Top Command Header:
+  * Brand Badge: "SMA Sentinel SecOps v1.0" with active home routing.
+  * Sidebar Collapse Toggle: Smoothly transitions the sidebar between full view (250px) 
+    and collapsed icon-rail mode (68px) with floating tooltips.
+  * Hierarchical Breadcrumbs: Dynamic section and page breadcrumbs showing current depth.
+  * Global Account Search Bar: Instant text input with `<Search />` icon. Typing any handle 
+    or ID immediately navigates to `AccountInvestigation` with that account pre-loaded.
+  * Dataset Badge: Displays active dataset (`TwiBot-20`) with direct routing to Dataset Explorer.
+  * Export JSON Button: Generates and downloads a complete operational telemetry audit 
+    file (`sma-sentinel-telemetry-[timestamp].json`).
+  * Live Telemetry Heartbeat: Real-time pulsing green indicator reflecting API gateway 
+    state (`API:8000 LIVE`). Clicking routes directly to Infrastructure Health.
+- Persistent Collapsible Sidebar:
+  * Categorized Sections:
+    1. Core Telemetry: Threat Overview, Dataset Explorer, Account Dossier
+    2. Behavioral & Linguistic: Sentiment & NLP, Behavior Dynamics, Graph Topology, Predictive Models
+    3. Multimedia Surveillance: Object Tracking, Visual Clone Search, Video Forensics
+  * System Health Footer: Displays live SQLite connection state and link to infrastructure.
+
+--------------------------------------------------------------------------------
+3.2 EXECUTIVE THREAT DASHBOARD (pages/Dashboard.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Serves as the high-level Command & Control overview for SecOps analysts, summarizing 
+threat prevalence, leading classifier benchmark scores, automated entity triage, and 
+analytical module readiness.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Executive Kicker & Header: Live production workspace status badge with build hash.
+- Top Action Controls:
+  * "Sync Telemetry": Triggers live asynchronous re-fetch across summary, ML metrics, and suspects.
+  * "Account Dossier": Direct shortcut button jumping into forensic investigation.
+- Four Core Stat KPI Cards:
+  * Audited Accounts (500 benchmark accounts)
+  * Bot Prevalence (40.0% / 200 automated entities)
+  * Mean Suspicion Score (20.3 composite index)
+  * Leading Classifier Accuracy (Random Forest 89.2%, AUC 0.941)
+- Analytical Domain Quick Launch Cards:
+  * Quick link cards for Text Forensics (NLP), Behavior Dynamics, and Computer Vision.
+- Primary Visual Analytics:
+  * Population Classification Donut: Pie chart showing ground-truth balance (Bot vs Organic).
+  * Classifier Performance Bar Chart: Side-by-side normalized Accuracy, F1, and ROC-AUC comparison.
+  * "Inspect ROC Curves" Button: Directly navigates to the ML Analysis workspace.
+- High-Risk Automated Entity Triage Table:
+  * Displays flagged entities ranked by suspicion index.
+  * Filter pills: "All Flagged", "Critical Risk (>=60)", "Moderate (<60)".
+  * Direct "Audit" Button with `<ChevronRight />` on each row to open that account's dossier.
+- Analytical Workstream Module Readiness Grid:
+  * 9 interactive cards displaying operational specs for WS-01 through WS-09. Clicking any card 
+    routes immediately to that module's workspace.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/dashboard/summary`, `GET /api/ml/metrics`, `GET /api/behaviour/top-suspicious?n=15`
+- Visuals: Recharts `PieChart`, `BarChart`, custom HTML status badges.
+
+--------------------------------------------------------------------------------
+3.3 DATASET SCHEMA & DISTRIBUTION EXPLORER (pages/DatasetExplorer.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Provides raw data hygiene metrics, structural schema definitions, null-value analysis, 
+and raw entity record inspection for the TwiBot-20 benchmark dataset.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Global Action Controls:
+  * "Reload Dataset" Button: Calls `POST /api/dataset/reload` to invalidate server caches, 
+    re-read raw records, and re-populate state with active loading spinner.
+  * "Export Schema" Button: Downloads `twibot20-schema-metadata-[timestamp].json` containing 
+    complete attribute summaries, distributions, and null metrics.
+- High-Level Summary Cards:
+  * Total Records, Bot Entities, Human Accounts, Total Columns, Duplicate Rows, Tweet Text status, 
+    and Network Graph status.
+- Dataset Information Card:
+  * Structured two-column specification detailing dataset source, row count, and availability flags.
+- Visual Quality Diagnostics:
+  * Class Distribution Donut: Proportional visualization of bot vs human ratio.
+  * Missing Values Horizontal Bar Chart: Ranked display of top columns with null/missing data.
+- Interactive Column Attribute Schema Table:
+  * Real-time search filter input to filter attributes by name or data type.
+  * Displays Column Name, Data Type, Null Count, Null Percentage, and Unique Cardinality.
+- Interactive Sample Records Table:
+  * Class filter buttons: `All`, `Bots`, `Humans`.
+  * Row limit selector: `10 records`, `20 records`, `35 records`, `50 records`.
+  * Dedicated "Audit" action button on each sample row linking to `AccountInvestigation`.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/dataset/summary`, `GET /api/dataset/distribution`, `GET /api/dataset/missing`, 
+  `GET /api/dataset/sample?n={n}`, `GET /api/dataset/columns`, `GET /api/dataset/duplicates`, 
+  `POST /api/dataset/reload`
+- Preprocessing: `preprocessing.py` flattening raw TwiBot-20 JSON records into tabular schema.
+
+--------------------------------------------------------------------------------
+3.4 BEHAVIORAL DYNAMICS & INTERACTION PROFILING (pages/BehaviourAnalytics.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Performs deep-dive statistical analysis on user interaction schedules, engagement burstiness, 
+follower-to-following ratios, and composite bot likelihood indices.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Dataset Overview Stat Cards:
+  * Engineered Features formulated (14), Labeled population, Bot count, Human count.
+- Mean Feature Comparison Bar Chart:
+  * Side-by-side comparison of average feature values across bots and humans.
+- Boolean Feature Rates Chart:
+  * Horizontal bar chart displaying the percentage of accounts where boolean flags 
+    (`verified`, `default_profile`, `default_profile_image`, `geo_enabled`) are True.
+- Score Distributions Area Chart:
+  * Interactive tab toggle between "Suspicion Index Distribution" and "Activity Index Distribution".
+  * Dual gradient area chart showing the separation between bot and human cohorts.
+- Account Tier Distribution:
+  * Stacked bar chart showing the bot vs human proportion across follower count tiers 
+    (Micro < 1k, Mid 1k-10k, Macro 10k-100k, Mega > 100k).
+- Interactive Feature Scatter Plot:
+  * Dynamic X-Axis and Y-Axis dimension select dropdowns (9 available features).
+  * "Export Scatter CSV" Button to download coordinates.
+  * Interactive scatter dots: Clicking any point automatically routes to that account's dossier.
+- Feature Statistics Table:
+  * Search input to quickly find features by name.
+  * "Export Feature Stats CSV" button for offline analysis.
+  * Displays Mean, Median, Std Dev, and sample counts per class.
+- Top Suspicious Accounts Leaderboard:
+  * Ranked table of the top 15 most suspicious accounts in the dataset.
+  * Displays Handle, Class Label, Suspicion Index, Activity Score, Followers, Following, 
+    Tweets/Day, and FF Ratio.
+  * Working "Audit" button on every row that routes to `AccountInvestigation`.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/features/summary`, `GET /api/features/stats`, `GET /api/behaviour/comparison`, 
+  `GET /api/behaviour/boolean-rates`, `GET /api/behaviour/score-distributions`, 
+  `GET /api/behaviour/account-tiers`, `GET /api/behaviour/top-suspicious`, `GET /api/behaviour/scatter`
+- Logic: `feature_engineering.py` computing statistical moments and heuristic composite scores.
+
+--------------------------------------------------------------------------------
+3.5 SENTIMENT ANALYSIS & TEXTUAL EXTRACTION (pages/NLPAnalysis.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Analyzes tweet content to extract linguistic patterns, sentiment emotion valence, and 
+discriminative vocabulary divergence between automated bots and organic humans.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Action Controls:
+  * "Recalculate Scores" Button: Re-evaluates VADER polarity and TF-IDF terms.
+  * "Export NLP Data" Button: Downloads `nlp_lexical_analysis_[timestamp].json`.
+- Sentiment Polarity Profile Cards:
+  * Dedicated cards for Bot Account Corpus vs Human User Corpus.
+  * Horizontal metric bars for Compound Polarity, Positive Sentiment, Neutral Sentiment, 
+    and Negative Sentiment.
+- Multi-Tab Analysis Console:
+  1. Sentiment Radar & Valence:
+     * 4-axis Radar chart comparing Compound, Positive, Neutral, and Negative valence.
+     * Dual bar charts illustrating compound score distribution histograms for each class.
+  2. TF-IDF Discriminative Tokens:
+     * Tab toggle between "Bot Tokens" and "Human Tokens".
+     * Live search input to filter tokens.
+     * Horizontal bar chart displaying the top 25 highest-weight discriminative tokens.
+  3. Lexical Word Frequencies:
+     * Side-by-side vertical bar charts displaying top unigram frequencies for bots vs humans.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/nlp/sentiment`, `GET /api/nlp/tfidf?top_n=25`, `GET /api/nlp/word-frequency?top_n=25`
+- Engine: NLTK `SentimentIntensityAnalyzer` (VADER) + Scikit-Learn `TfidfVectorizer` in `nlp_analysis.py`.
+
+--------------------------------------------------------------------------------
+3.6 SOCIAL GRAPH TOPOLOGY & CENTRALITY (pages/NetworkAnalysis.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Evaluates social interaction follower networks using directed graph topology, measuring in-degree 
+(authority), out-degree (hub activity), and PageRank stationary influence.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Action Controls:
+  * "Refresh Graph" Button: Re-executes NetworkX graph traversal and metric calculations.
+  * "Export Graph JSON" Button: Downloads complete graph topology specifications.
+- Topology Stat Cards:
+  * Total Graph Nodes, Interaction Edges, Mean Degree, and Network Density index.
+  * Bot vs Human node distribution pills.
+- Multi-Tab Graph Diagnostics:
+  1. Label Metrics Comparison:
+     * Bar chart comparing Average Degree, In-Degree, and Out-Degree by class label.
+     * Mean PageRank Influence cards displaying random walk stationary probability (alpha = 0.85).
+  2. Degree Distribution Histogram:
+     * Dual histogram bar charts illustrating connectivity distribution for bot vs human nodes.
+  3. PageRank Centrality Leaderboard:
+     * Class filter pills: `ALL`, `BOT`, `HUMAN`.
+     * Live node search input.
+     * Ranked table of the top 30 most central nodes in the network.
+     * Working "Audit" button on each row navigating directly to `AccountInvestigation`.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/network/summary`, `GET /api/network/metrics?top_n=30`, 
+  `GET /api/network/degree-distribution`, `GET /api/network/label-metrics`
+- Engine: NetworkX `DiGraph` algorithms in `network_analysis.py`.
+
+--------------------------------------------------------------------------------
+3.7 PREDICTIVE MACHINE LEARNING CLASSIFIERS (pages/MLAnalysis.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Trains, cross-validates, and evaluates machine learning classification architectures 
+to distinguish bots from humans using 14 behavioral features.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Action Controls:
+  * "Re-fit / Train Pipeline" Button: Calls `POST /api/ml/train` to train Random Forest, 
+    Decision Tree, and Logistic Regression models with live spinner animation.
+  * Model Selector Switcher: Interactive buttons to toggle active model (`Random Forest`, 
+    `Logistic Regression`, `Decision Tree`).
+  * "Export Benchmark JSON" Button: Downloads complete hold-out metrics and confusion matrices.
+- Selected Model KPI Strip:
+  * Accuracy, Precision, Recall, F1 Score, and ROC-AUC cards for the active model.
+  * 5-Fold Cross-Validation summary string showing mean +/- standard deviation across folds.
+- Analytical Benchmark Tabs:
+  1. Comparative Evaluation:
+     * Side-by-side bar chart benchmarking Accuracy, F1, and ROC-AUC across all 3 models.
+     * Comprehensive Cross-Validation summary table.
+  2. Relative Feature Importance:
+     * Horizontal bar chart displaying Gini impurity decrease (Random Forest / Decision Tree) 
+       or absolute weight coefficients (Logistic Regression) across the top 12 features.
+  3. Hold-Out Confusion Matrix:
+     * 2x2 contingency matrix showing True Negatives, False Positives (Type I), False Negatives 
+       (Type II), and True Positives with percentage calculations.
+  4. ROC Curves Overlay:
+     * Multi-line chart plotting True Positive Rate vs False Positive Rate across decision thresholds 
+       with individual AUC scores displayed.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/ml/metrics`, `GET /api/ml/feature-importance?model={m}`, 
+  `GET /api/ml/confusion-matrix?model={m}`, `GET /api/ml/roc-all`, `POST /api/ml/train`
+- Engine: Scikit-Learn `RandomForestClassifier`, `DecisionTreeClassifier`, `LogisticRegression`, 
+  `StratifiedKFold(n_splits=5)`, and `roc_curve` in `ml_pipeline.py`.
+
+--------------------------------------------------------------------------------
+3.8 ACCOUNT INVESTIGATION & THREAT DOSSIER (pages/AccountInvestigation.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Provides an interactive forensic workspace where analysts can look up any account, 
+examine risk indicators, assess multi-model predictions, compare metrics against 
+population averages, and generate intelligence reports.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Account Lookup & Autocomplete Search:
+  * Debounced search input that queries `GET /api/investigate/search` and displays an instant 
+    dropdown with screen names, display names, labels, and suspicion scores.
+- Account Directory Browser:
+  * Filter dropdowns: Label filter (`All`, `Bots`, `Humans`) and Sort order 
+    (Suspicion, Activity, Followers, Tweets/Day).
+  * Interactive table with pagination controls (Prev / Next).
+  * "Investigate" button on each row opening that account's dossier.
+- Forensic Investigation Report View (When an account is selected):
+  * "Back to Directory" Button: Returns to directory search mode.
+  * "Watchlist Entity" Toggle Button: Allows analysts to flag/bookmark suspicious accounts.
+  * "Export Dossier JSON" Button: Downloads the full dossier containing profile data, scores, 
+    ML probabilities, suspicion reasons, and feature comparisons.
+  * Verdict Threat Banner: Prominent indicator (High Risk Bot Account, Elevated Threat, 
+    or Organic Human) with Shield Alert / Check icons.
+  * Risk Score Gauges: Radial SVG arcs for Suspicion Score (0-100), Activity Score (0-100), 
+    and Multi-Model Bot Probability (0-100%).
+  * Account Identity Panel: Verified status, Followers, Following, Statuses, User ID, and Age.
+  * ML Model Predictions: Horizontal probability bars from each classifier with assigned label.
+  * Suspicion Reason Cards: Explicit penalty breakdowns explaining exactly which behaviors 
+    triggered suspicion (e.g., +25 Default Avatar, +20 Follower Imbalance, +15 Tweet Velocity).
+  * Feature Comparison Radar & Bar Charts: Normalised comparison showing where the account sits 
+    relative to the Bot Average and Human Average.
+  * Full Feature Divergence Table: Detailed numeric breakdown showing every metric and whether 
+    it is closer to the bot or human population mean.
+
+TECHNOLOGY & DATA FLOW:
+- API Routes: `GET /api/investigate/stats`, `GET /api/investigate/search?q={q}&n=8`, 
+  `GET /api/investigate/accounts?page={p}&page_size=20&label={l}&sort_by={s}`, 
+  `GET /api/investigate/account?query={query}`
+- Engine: `account_investigation.py` generating forensic dossiers on the fly.
+
+--------------------------------------------------------------------------------
+3.9 REAL-TIME OBJECT DETECTION & TRACKING (pages/ObjectDetectionTracking.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Applies computer vision algorithms to detect, localize, and track visual elements 
+(avatars, faces, display devices, watermarks, automated banners) across social media video streams.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Telemetry & KPI Stats:
+  * Visual Objects Detected (1,410), mAP@50 (94.6%), MOTA Tracking Persistence (98.2%), 
+    Inference Latency (48.5 ms).
+- Action Controls:
+  * "Export Annotations" Button: Downloads `yolov8-detections-telemetry-[frame].json`.
+  * Play / Pause Stream Toggle: Automated timer cycling through video frames (00:01 to 00:05).
+  * Manual Frame Stepper Buttons: Allows single-frame forensic stepping.
+- Interactive Video Frame Canvas:
+  * Simulated video view rendering live bounding boxes with label tags, confidence scores, 
+    and track IDs.
+  * Hovering or clicking bounding boxes highlights corresponding entries in the detection table.
+- Detection Filter Buttons:
+  * Filter by class: `All`, `Person`, `Avatar`, `Watermark`, `Banner`.
+- Spatial Trajectory Persistence Chart:
+  * Area chart showing tracking confidence and Kalman trajectory persistence over time.
+- Class Distribution Donut Chart:
+  * Breakdown of detected object categories across the video corpus.
+- Frame Detection Data Table:
+  * Full table of all bounding box coordinates (x, y, w, h), speed estimates, and tracking state.
+
+TECHNOLOGY & DATA FLOW:
+- Computer Vision Models: YOLOv8x multi-class localization + DeepSORT tracker.
+
+--------------------------------------------------------------------------------
+3.10 CONTENT-BASED IMAGE RETRIEVAL & CLONE SEARCH (pages/CBIRAnalysis.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Identifies coordinated clone campaigns, sybil profile avatar reuse, and propaganda meme 
+variants using high-dimensional deep embeddings and perceptual hashing.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- KPI Stats:
+  * Indexed Embeddings (12,850), P@5 Retrieval Precision (97.8%), Mean Cosine Distance (0.014), 
+    Embedding Dimensionality (512-d).
+- Action Controls:
+  * Query Archetype Selector: Toggle between Profile Avatar Match (`Q-01`), Propaganda Watermark 
+    (`Q-02`), and Meme Variant Duplicate (`Q-03`).
+  * "Export Matches" Button: Downloads CBIR retrieval results as JSON.
+- Cosine Similarity Cutoff Slider:
+  * Dynamic range slider (0.70 to 0.99) that filters nearest neighbors in real time.
+- Descriptor Architecture Benchmark Radar:
+  * Evaluates Color Histogram, Gabor Texture, SIFT/ORB, Deep ResNet, and CLIP vectors.
+- Nearest Neighbors (k-NN) Match Table:
+  * Ranked table displaying Asset ID, Similarity %, Associated Handle, and Classification.
+  * Clicking any row loads that asset into the inspection card.
+- Visual Clone Forensic Inspection Drawer:
+  * Displays 64-bit Perceptual Hash (pHash), Cosine Similarity, Euclidean Distance, and Associated Handle.
+  * "Audit Account in Dossier" Button: Direct one-click routing to open that account's dossier.
+
+TECHNOLOGY & DATA FLOW:
+- Retrieval Engine: FAISS (Facebook AI Similarity Search) IVF-Flat indexing + ResNet-50 512-d embeddings.
+
+--------------------------------------------------------------------------------
+3.11 VIDEO CONTENT FORENSICS & IR ENGINE (pages/VideoContentIRAnalysis.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Analyzes temporal structure, shot transitions, and keyframe text in social video feeds 
+to detect coordinated video mirroring and synthetic voice campaigns.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- KPI Stats:
+  * Video Streams Evaluated (8,420), NDCG@10 (0.932), Shot Boundary Recall (96.4%), Mean IR Latency (18.2 ms).
+- Temporal Shot Boundary Graph:
+  * Area chart plotting inter-frame histogram difference scores across video timestamps, 
+    highlighting hard cuts, flash transitions, and automated scene splices.
+- Multi-Modal Information Retrieval (IR) Search Console:
+  * Keyword search bar with `<Search />` icon for query input.
+  * Quick Query preset chips (`crypto spam narrative`, `synthetic voice political`, 
+    `watermark clone mirror`, `airdrop giveaway token`, `organic tech discussion`).
+- Master-Detail Retrieved Video Documents List:
+  * Ranked cards displaying Rank #, Title, Match Snippet, Author, Duration, and Similarity %.
+  * Clicking any document loads it into the forensic drawer.
+- Document Dossier Inspection Drawer:
+  * Displays Document ID, Duration, Cross-Encoder Score, Classification, and Index Posting Tokens.
+  * "Audit Author in Account Dossier" Button: Routes directly to `AccountInvestigation`.
+- IR Benchmark Evaluation Table:
+  * Comparative table displaying MAP score, Recall@10, and NDCG@10 across standard query archetypes.
+
+TECHNOLOGY & DATA FLOW:
+- IR Engine: Hybrid Dense Vector Embeddings (ColBERTv2) + Inverted Postings Index (BM25).
+
+--------------------------------------------------------------------------------
+3.12 INFRASTRUCTURE TELEMETRY & SYSTEM HEALTH (pages/HealthCheck.jsx)
+--------------------------------------------------------------------------------
+PURPOSE:
+Monitors real-time connectivity between the React frontend client, FastAPI backend, 
+and SQLite database storage layer.
+
+KEY COMPONENTS & FUNCTIONALITY:
+- Infrastructure State Icon & Badge:
+  * Dynamic visual status: Loading (Pinging Gateway), Success (Telemetry Stream Active), 
+    or Error (Connection Severed).
+- Diagnostic Telemetry Specs:
+  * API Build Version (`v0.4.0`)
+  * Service State (`OK` / `ACTIVE`)
+  * SQLite Database Engine (`CONNECTED`)
+  * Last Verified Ping Timestamp
+- Action Controls:
+  * "Re-test Connectivity" Button: Forces an immediate HTTP ping to `/api/health` with live spinner.
+
+TECHNOLOGY & DATA FLOW:
+- API Route: `GET /api/health`
+
+
+================================================================================
+4. KEY ALGORITHMS & MATHEMATICAL FORMULATIONS
+================================================================================
+
+4.1 FEATURE NORMALIZATION & DERIVATION:
+  - Followers-to-Following Ratio (FF Ratio):
+      FF_Ratio = followers_count / max(friends_count, 1)
+  - Posting Velocity:
+      Tweets_Per_Day = statuses_count / max(account_age_days, 1)
+  - Account Age (Days):
+      Account_Age = (Current_Time_UTC - created_at_UTC).days
+
+4.2 COMPOSITE BOT SUSPICION INDEX (Heuristic Risk Engine):
+  The heuristic suspicion index S in [0, 100] is calculated as:
+      S = min(100, Sum(w_i * Flag_i))
+  Where weights w_i are assigned based on known bot characteristics:
+    * Default Profile Avatar: +25
+    * Follower Imbalance (Following > 500 & Followers < 20): +20
+    * High Posting Velocity (> 50 tweets/day): +20
+    * Unverified Account: +10
+    * Empty Description Bio (Length == 0): +15
+    * High Following Velocity (> 30 follows/day): +10
+
+4.3 VADER SENTIMENT POLARITY (Linguistic Engine):
+  The normalized compound sentiment score c in [-1.0, 1.0] is computed from valence sums:
+      x = Sum(v_i)
+      c = x / sqrt(x^2 + alpha)
+  Where alpha is a normalisation constant (typically alpha = 15).
+  Valence scores v_i incorporate punctuation boosters, capitalization, and negation rules.
+
+4.4 TF-IDF LEXICAL DISCRIMINATION:
+  Term Frequency - Inverse Document Frequency weight for token t in document d across corpus D:
+      TF-IDF(t, d, D) = TF(t, d) * log( (1 + |D|) / (1 + DF(t, D)) ) + 1
+  Sublinear term frequency scaling is applied:
+      TF(t, d) = 1 + log(count(t, d)) for count > 0
+
+4.5 PAGERANK GRAPH CENTRALITY:
+  The stationary probability vector p over directed follower graph G = (V, E) satisfies:
+      p = ( (1 - d) / |V| ) * e + d * M * p
+  Where:
+    * d = 0.85 (damping factor)
+    * M is the column-stochastic transition matrix: M_ij = 1 / out_degree(j) if (j, i) in E
+    * e is the unit column vector
+
+4.6 FAISS COSINE SIMILARITY (Visual Embeddings):
+  For query image vector q and gallery embedding g in R^d:
+      Cosine_Similarity(q, g) = (q . g) / ( ||q||_2 * ||g||_2 )
+  FAISS normalizes vectors to unit length so that inner product equals cosine similarity:
+      Similarity = <q_norm, g_norm>
+
+4.7 SHOT BOUNDARY DETECTION (Video Segmentation):
+  Color histogram difference between consecutive frames F_t and F_{t+1}:
+      Diff(F_t, F_{t+1}) = Sum_b | H_t(b) - H_{t+1}(b) | / (2 * N)
+  Where H(b) is bin b of the normalized RGB/HSV histogram and N is total pixel count.
+  A transition is flagged when Diff exceeds threshold theta (default 0.70).
+
+
+================================================================================
+5. FUTURE ENHANCEMENTS & ROADMAP
+================================================================================
+
+5.1 REAL-TIME SOCIAL MEDIA FIREHOSE INGESTION:
+  - Integration with Twitter/X API v2 Streaming Endpoints, Reddit PRAW API, and Telegram 
+    Bot API to ingest messages, profile updates, and interaction events in real time.
+  - Apache Kafka or RabbitMQ event streaming pipeline for distributed message buffering.
+
+5.2 MULTIMODAL LARGE LANGUAGE MODELS (LLMs & VLMs):
+  - Deployment of open-weights Vision-Language Models (e.g., LLaVA, CLIP-ViT-L, Gemma) 
+    to extract semantic intent from memes, promotional text banners, and video captions.
+  - LLM-powered narrative extraction capable of identifying synchronized propaganda talking 
+    points across disparate accounts that do not share exact keywords.
+
+5.3 GRAPH NEURAL NETWORKS (GNNs):
+  - Transition from static NetworkX heuristics to deep Graph Neural Networks:
+    * Graph Convolutional Networks (GCN)
+    * Graph Attention Networks (GAT)
+    * Heterogeneous Graph Transformers (HGT)
+  - Train GNN models on relational graphs combining user-follower edges, retweet edges, 
+    mention edges, and shared-media edges for end-to-end community threat classification.
+
+5.4 DISTRIBUTED VECTOR DATABASE ARCHITECTURE:
+  - Migrate local FAISS memory indexing to production-grade distributed vector databases 
+    (Qdrant, Milvus, or Pinecone) to support billion-scale image and video keyframe retrieval.
+  - Implement hybrid search combining dense HNSW vector search with sparse BM25 indices.
+
+5.5 ACTIVE LEARNING & HUMAN-IN-THE-LOOP (HITL) FEEDBACK:
+  - Provide an analyst annotation interface where SecOps investigators can approve, reject, 
+    or reclassify suspected bots.
+  - Automated weekly model re-training pipeline that incorporates analyst corrections 
+    to continuously combat concept drift and evolving bot evasion tactics.
+
+5.6 SIEM & SOAR INTEGRATION:
+  - Webhook alert dispatcher for Splunk, Elastic Security, Microsoft Sentinel, Slack, and Discord.
+  - Automated threat intelligence export in standard STIX/TAXII format for cross-organizational 
+    threat sharing.
+
+5.7 EXPLAINABLE AI (XAI) & SHAP EXPLANATIONS:
+  - Integrate SHAP (SHapley Additive exPlanations) and LIME to generate mathematical 
+    feature attribution waterfall plots for every individual account prediction.
+
+
+================================================================================
+END OF SPECIFICATION DOCUMENT
+SMA Sentinel Intelligence Suite v1.0.0
+================================================================================

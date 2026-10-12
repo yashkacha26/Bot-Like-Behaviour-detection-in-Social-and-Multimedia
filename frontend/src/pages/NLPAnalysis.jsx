@@ -3,9 +3,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
 } from 'recharts'
-import axios from 'axios'
-
-const API = 'http://localhost:8000'
+import {
+  MessageSquare, RefreshCw, Download, Search, AlertTriangle, CheckCircle2
+} from 'lucide-react'
+import api from '../api/client'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
@@ -27,7 +28,7 @@ function SentimentBar({ label, value, color }) {
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{label}</span>
-        <span style={{ fontSize: '0.8rem', fontWeight: 700, color }}>{value.toFixed(3)}</span>
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color, fontFamily: 'var(--font-mono)' }}>{value.toFixed(3)}</span>
       </div>
       <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color, borderRadius: 3 }} />
@@ -36,7 +37,7 @@ function SentimentBar({ label, value, color }) {
   )
 }
 
-export default function NLPAnalysis() {
+export default function NLPAnalysis({ onNavigate }) {
   const [sentiment,  setSentiment]  = useState(null)
   const [tfidf,      setTfidf]      = useState(null)
   const [wordFreq,   setWordFreq]   = useState(null)
@@ -44,15 +45,16 @@ export default function NLPAnalysis() {
   const [error,      setError]      = useState(null)
   const [activeTab,  setActiveTab]  = useState('sentiment')
   const [tfidfView,  setTfidfView]  = useState('bot')
+  const [tokenSearch, setTokenSearch] = useState('')
 
   const fetchAll = async () => {
     setLoading(true)
     setError(null)
     try {
       const [sRes, tRes, wRes] = await Promise.all([
-        axios.get(`${API}/api/nlp/sentiment`),
-        axios.get(`${API}/api/nlp/tfidf?top_n=20`),
-        axios.get(`${API}/api/nlp/word-frequency?top_n=20`),
+        api.get('/nlp/sentiment'),
+        api.get('/nlp/tfidf?top_n=25'),
+        api.get('/nlp/word-frequency?top_n=25'),
       ])
       setSentiment(sRes.data)
       setTfidf(tRes.data)
@@ -66,6 +68,24 @@ export default function NLPAnalysis() {
 
   useEffect(() => { fetchAll() }, [])
 
+  const handleExportNLP = () => {
+    const payload = {
+      sentiment,
+      tfidf,
+      wordFrequency: wordFreq,
+      exportedAt: new Date().toISOString()
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `nlp_lexical_analysis_${Date.now()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const sentimentRadar = sentiment ? [
     { metric: 'Compound', bot: sentiment.bot.compound,  human: sentiment.human.compound },
     { metric: 'Positive', bot: sentiment.bot.pos,       human: sentiment.human.pos },
@@ -73,30 +93,50 @@ export default function NLPAnalysis() {
     { metric: 'Negative', bot: sentiment.bot.neg,       human: sentiment.human.neg },
   ] : []
 
+  const filteredTfidf = (tfidf && tfidf[tfidfView] ? tfidf[tfidfView] : []).filter(item =>
+    !tokenSearch || item.token.toLowerCase().includes(tokenSearch.toLowerCase())
+  )
+
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <span className="badge badge-accent" style={{ marginBottom: 8 }}>Natural Language Processing</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Sentiment Analysis & Textual Extraction</h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+          <div className="page-header__kicker">
+            <span className="badge badge-accent">Natural Language Processing</span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+              VADER + TF-IDF
+            </span>
+          </div>
+          <h1>Sentiment Analysis &amp; Textual Extraction</h1>
+          <p>
             VADER compound polarity scores, emotion valence, TF-IDF lexical discrimination, and bot vs human vocabulary divergence.
           </p>
         </div>
-        <span className="stat-pill" style={{ background: 'var(--color-surface-2)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
-          Parser: <strong>VADER + Scikit-Learn TF-IDF</strong>
-        </span>
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button className="btn btn-secondary" onClick={fetchAll} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'spinner' : ''} />
+            Recalculate Scores
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportNLP} disabled={!sentiment}>
+            <Download size={14} />
+            Export NLP Data
+          </button>
+        </div>
       </div>
 
       {error && (
         <div className="error-box" style={{ marginBottom: 24 }}>
-          <span>{error}</span>
-          <button className="btn-retry" onClick={fetchAll}>Retry</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlertTriangle size={15} />
+            <span>{error}</span>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={fetchAll}>Retry</button>
         </div>
       )}
 
       {loading && (
-        <div className="loading-box"><div className="spinner" /> Running sentiment & lexical analysis…</div>
+        <div className="loading-box"><div className="spinner" /> Running sentiment &amp; lexical analysis…</div>
       )}
 
       {!loading && !error && sentiment && (
@@ -138,8 +178,8 @@ export default function NLPAnalysis() {
             </div>
           </div>
 
-          {/* Tabs without emojis */}
-          <div className="tab-row" style={{ marginBottom: 24 }}>
+          {/* Navigation Tabs */}
+          <div className="tab-row" style={{ marginBottom: 20 }}>
             {[
               ['sentiment', 'Sentiment Comparison & Valence'],
               ['tfidf', 'TF-IDF Discriminative Tokens'],
@@ -160,8 +200,10 @@ export default function NLPAnalysis() {
           {activeTab === 'sentiment' && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">Sentiment Radar Dimension: Bot vs Human</div>
-                <div className="section-subtitle">Multidimensional polarity comparison</div>
+                <div>
+                  <div className="section-title">Sentiment Radar Dimension: Bot vs Human</div>
+                  <div className="section-subtitle">Multidimensional polarity comparison</div>
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={320}>
                 <RadarChart data={sentimentRadar}>
@@ -201,31 +243,58 @@ export default function NLPAnalysis() {
             </div>
           )}
 
-          {/* TF-IDF tokens */}
+          {/* TF-IDF tokens with token filter */}
           {activeTab === 'tfidf' && tfidf && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">TF-IDF Top Discriminative Tokens</div>
-                <div className="section-subtitle">Key terms showing greatest variance in bot vs human language usage</div>
+                <div>
+                  <div className="section-title">TF-IDF Top Discriminative Tokens</div>
+                  <div className="section-subtitle">Key terms showing greatest variance in bot vs human language usage</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div className="tab-row" style={{ margin: 0 }}>
+                    {['bot', 'human'].map(v => (
+                      <button
+                        key={v}
+                        id={`tfidf-view-${v}`}
+                        className={`tab-btn${tfidfView === v ? ' active' : ''}`}
+                        onClick={() => setTfidfView(v)}
+                        style={{ padding: '3px 10px', fontSize: '0.74rem' }}
+                      >
+                        {v === 'bot' ? 'Bot Tokens' : 'Human Tokens'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder="Filter token..."
+                      value={tokenSearch}
+                      onChange={e => setTokenSearch(e.target.value)}
+                      style={{
+                        background: 'var(--color-surface-2)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '4px 8px 4px 26px',
+                        fontSize: '0.74rem',
+                        color: 'var(--color-text)',
+                        width: 140,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="tab-row" style={{ marginBottom: 16 }}>
-                {['bot', 'human'].map(v => (
-                  <button
-                    key={v}
-                    id={`tfidf-view-${v}`}
-                    className={`tab-btn${tfidfView === v ? ' active' : ''}`}
-                    onClick={() => setTfidfView(v)}
-                  >
-                    {v === 'bot' ? 'Bot Specific Tokens' : 'Human Specific Tokens'}
-                  </button>
-                ))}
-              </div>
+
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={tfidf[tfidfView]} layout="vertical">
+                <BarChart data={filteredTfidf} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                   <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                   <YAxis type="category" dataKey="token" width={130}
-                    tick={{ fill: '#22d3ee', fontSize: 11, fontFamily: 'monospace' }} />
+                    tick={{ fill: '#22d3ee', fontSize: 11, fontFamily: 'var(--font-mono)' }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="score" fill={tfidfView === 'bot' ? '#ef4444' : '#22d3ee'}
                     radius={[0, 4, 4, 0]} opacity={0.85} />
@@ -238,8 +307,10 @@ export default function NLPAnalysis() {
           {activeTab === 'wordfreq' && wordFreq && (
             <div className="card">
               <div className="section-header">
-                <div className="section-title">Lexical Frequency Distribution</div>
-                <div className="section-subtitle">Top unigrams observed in corpus messages</div>
+                <div>
+                  <div className="section-title">Lexical Frequency Distribution</div>
+                  <div className="section-subtitle">Top unigrams observed in corpus messages</div>
+                </div>
               </div>
               <div className="ba-grid-2">
                 {['bot', 'human'].map(lbl => (
@@ -255,7 +326,7 @@ export default function NLPAnalysis() {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                         <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 10 }} />
                         <YAxis type="category" dataKey="word" width={80}
-                          tick={{ fill: '#22d3ee', fontSize: 10, fontFamily: 'monospace' }} />
+                          tick={{ fill: '#22d3ee', fontSize: 10, fontFamily: 'var(--font-mono)' }} />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="count" fill={lbl === 'bot' ? '#ef4444' : '#22d3ee'}
                           radius={[0, 4, 4, 0]} opacity={0.8} />

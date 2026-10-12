@@ -3,25 +3,40 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts'
+import {
+  Image, Search, Sliders, CheckCircle2, UserCheck,
+  ChevronRight, Download, Eye, Sparkles
+} from 'lucide-react'
 
 const QUERY_PROFILES = [
   {
     id: 'Q-01',
     name: 'Profile Picture / Avatar Match',
-    type: 'Synthetic Face',
+    type: 'Synthetic Face Asset',
     embeddingDim: 512,
     extractMethod: 'ResNet-50 + Cosine Sim',
     avgSimilarity: 0.942,
     resultsCount: 8,
+    matches: [
+      { rank: 1, docId: 'IMG-8921', similarity: 0.988, distance: 0.012, classLabel: 'Verified Bot Network Asset', accountRef: '@crypto_bot_14', hash: 'e3b0c44298fc1c14' },
+      { rank: 2, docId: 'IMG-8922', similarity: 0.981, distance: 0.019, classLabel: 'Verified Bot Network Asset', accountRef: '@gain_followers_99', hash: 'd41d8cd98f00b204' },
+      { rank: 3, docId: 'IMG-1190', similarity: 0.923, distance: 0.077, classLabel: 'Sybil Account Avatar', accountRef: '@auto_feed_news', hash: 'ab56b4d92b40713a' },
+      { rank: 4, docId: 'IMG-0348', similarity: 0.865, distance: 0.135, classLabel: 'Organic User', accountRef: '@alex_johnson', hash: '7c4a8d09ca3762af' },
+    ]
   },
   {
     id: 'Q-02',
     name: 'Propaganda Watermark Graphic',
-    type: 'Vector Overlay',
+    type: 'Vector Overlay Asset',
     embeddingDim: 2048,
     extractMethod: 'DenseNet-121 + SIFT',
     avgSimilarity: 0.985,
     resultsCount: 19,
+    matches: [
+      { rank: 1, docId: 'IMG-4102', similarity: 0.994, distance: 0.006, classLabel: 'Coordinated Campaign Asset', accountRef: '@promo_daily_x', hash: '900150983cd24fb0' },
+      { rank: 2, docId: 'IMG-4105', similarity: 0.978, distance: 0.022, classLabel: 'Coordinated Campaign Asset', accountRef: '@crypto_bot_14', hash: '900150983cd24fb1' },
+      { rank: 3, docId: 'IMG-6621', similarity: 0.887, distance: 0.113, classLabel: 'Stock Creative Asset', accountRef: '@trend_hub_2024', hash: 'fa2591b6016a22b8' },
+    ]
   },
   {
     id: 'Q-03',
@@ -31,16 +46,12 @@ const QUERY_PROFILES = [
     extractMethod: 'CLIP ViT-B/32',
     avgSimilarity: 0.897,
     resultsCount: 42,
+    matches: [
+      { rank: 1, docId: 'IMG-3301', similarity: 0.952, distance: 0.048, classLabel: 'Sybil Distribution Node', accountRef: '@viral_clip_feed', hash: '8f411b9812cc9081' },
+      { rank: 2, docId: 'IMG-3304', similarity: 0.915, distance: 0.085, classLabel: 'Sybil Distribution Node', accountRef: '@daily_wire_news', hash: '8f411b9812cc9085' },
+      { rank: 3, docId: 'IMG-0348', similarity: 0.842, distance: 0.158, classLabel: 'Organic User', accountRef: '@alex_johnson', hash: '7c4a8d09ca3762af' },
+    ]
   },
-]
-
-const RETRIEVED_ITEMS = [
-  { rank: 1, docId: 'IMG-8921', similarity: 0.988, distance: 0.012, classLabel: 'Verified Bot Network Asset', accountRef: '@crypto_bot_14', hash: 'e3b0c44298fc1c14' },
-  { rank: 2, docId: 'IMG-8922', similarity: 0.981, distance: 0.019, classLabel: 'Verified Bot Network Asset', accountRef: '@gain_followers_99', hash: 'd41d8cd98f00b204' },
-  { rank: 3, docId: 'IMG-4102', similarity: 0.954, distance: 0.046, classLabel: 'Coordinated Campaign', accountRef: '@promo_daily_x', hash: '900150983cd24fb0' },
-  { rank: 4, docId: 'IMG-1190', similarity: 0.923, distance: 0.077, classLabel: 'Sybil Account Avatar', accountRef: '@auto_feed_news', hash: 'ab56b4d92b40713a' },
-  { rank: 5, docId: 'IMG-6621', similarity: 0.887, distance: 0.113, classLabel: 'Stock Creative', accountRef: '@trend_hub_2024', hash: 'fa2591b6016a22b8' },
-  { rank: 6, docId: 'IMG-0348', similarity: 0.865, distance: 0.135, classLabel: 'Organic User', accountRef: '@alex_johnson', hash: '7c4a8d09ca3762af' },
 ]
 
 const FEATURE_DIMENSION_STATS = [
@@ -51,53 +62,73 @@ const FEATURE_DIMENSION_STATS = [
   { feature: 'CLIP Multimodal Vector', accuracy: 0.98, retrievalSpeed: 0.81 },
 ]
 
-export default function CBIRAnalysis() {
+export default function CBIRAnalysis({ onNavigate }) {
   const [selectedQuery, setSelectedQuery] = useState(QUERY_PROFILES[0])
   const [metricThreshold, setMetricThreshold] = useState(0.85)
+  const [inspectedAsset, setInspectedAsset] = useState(QUERY_PROFILES[0].matches[0])
 
-  const filteredMatches = RETRIEVED_ITEMS.filter(item => item.similarity >= metricThreshold)
+  const filteredMatches = (selectedQuery.matches || []).filter(item => item.similarity >= metricThreshold)
+
+  const handleSelectQuery = (q) => {
+    setSelectedQuery(q)
+    if (q.matches && q.matches.length > 0) {
+      setInspectedAsset(q.matches[0])
+    }
+  }
+
+  const handleExportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredMatches, null, 2))
+    const dl = document.createElement('a')
+    dl.setAttribute("href", dataStr)
+    dl.setAttribute("download", `cbir-retrieval-results-${selectedQuery.id}.json`)
+    dl.click()
+  }
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <span className="badge badge-primary" style={{ marginBottom: 8 }}>Multimedia Analytics Module</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Content-Based Image Retrieval (CBIR)</h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            High-dimensional visual feature extraction, perceptual hashing, and nearest neighbor indexing for visual clone detection.
+          <div className="page-header__kicker">
+            <span className="badge badge-primary">Computer Vision</span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>FAISS IVF-FLAT</span>
+          </div>
+          <h1>Content-Based Image Retrieval (CBIR) &amp; Clone Search</h1>
+          <p>
+            High-dimensional visual feature extraction, perceptual hashing (pHash), and nearest neighbor indexing for image clone cluster detection.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <span className="stat-pill" style={{ background: 'var(--color-surface-2)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
-            Indexer: <strong>FAISS IVF-Flat</strong>
-          </span>
-          <span className="stat-pill" style={{ background: 'rgba(99,102,241,0.15)', color: 'var(--color-primary)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(99,102,241,0.3)', fontSize: '0.82rem', fontWeight: 600 }}>
-            Query Time: 3.4 ms / query
-          </span>
+          <div className="telemetry-indicator">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem' }}>Query Time: <strong>3.4 ms</strong></span>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={handleExportJSON}>
+            <Download size={13} />
+            Export Matches
+          </button>
         </div>
       </div>
 
       {/* KPI Stats */}
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-        <div className="stat-card">
+      <div className="stat-grid" style={{ marginBottom: 24 }}>
+        <div className="stat-card card--accent-primary">
+          <div className="stat-card__label">Indexed Embeddings</div>
           <div className="stat-card__value" style={{ color: 'var(--color-primary)' }}>12,850</div>
-          <div className="stat-card__label">Indexed Visual Embeddings</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Vector database gallery corpus</div>
+          <div className="stat-card__sub">Vector database gallery corpus</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card card--accent-cyan">
+          <div className="stat-card__label">P@5 Retrieval Precision</div>
           <div className="stat-card__value" style={{ color: 'var(--color-accent)' }}>97.8%</div>
-          <div className="stat-card__label">Top-5 Retrieval Precision</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>P@5 on clone cluster benchmark</div>
+          <div className="stat-card__sub">Top-5 clone cluster benchmark</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>0.014</div>
+        <div className="stat-card card--accent-success">
           <div className="stat-card__label">Mean Cosine Distance</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Cluster tightness for synthetic media</div>
+          <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>0.014</div>
+          <div className="stat-card__sub">Cluster tightness for synthetic media</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card card--accent-warning">
+          <div className="stat-card__label">Vector Hypersphere</div>
           <div className="stat-card__value" style={{ color: 'var(--color-warning)' }}>512-d</div>
-          <div className="stat-card__label">Embedding Vector Space</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Normalized hypersphere representation</div>
+          <div className="stat-card__sub">Normalized feature space dimensionality</div>
         </div>
       </div>
 
@@ -106,30 +137,33 @@ export default function CBIRAnalysis() {
         {/* Active Query Profile */}
         <div className="card">
           <div className="section-header">
-            <div className="section-title">Query Image & Visual Descriptor</div>
-            <div className="section-subtitle">Select sample query to test retrieval index</div>
+            <div>
+              <div className="section-title">Query Image &amp; Visual Descriptor</div>
+              <div className="section-subtitle">Select query archetype to evaluate nearest neighbor ranking</div>
+            </div>
+            <span className="badge badge-primary">{selectedQuery.id}</span>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            {QUERY_PROFILES.map(q => (
-              <button
-                key={q.id}
-                onClick={() => setSelectedQuery(q)}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  textAlign: 'left',
-                  background: selectedQuery.id === q.id ? 'rgba(99,102,241,0.2)' : 'var(--color-surface-2)',
-                  color: selectedQuery.id === q.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                  border: selectedQuery.id === q.id ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                }}
-              >
-                <div>{q.name}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: 2 }}>{q.type}</div>
-              </button>
-            ))}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {QUERY_PROFILES.map(q => {
+              const isSelected = selectedQuery.id === q.id
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => handleSelectQuery(q)}
+                  className={`tab-btn${isSelected ? ' active' : ''}`}
+                  style={{
+                    flex: 1, padding: '10px 12px', textAlign: 'left',
+                    display: 'flex', flexDirection: 'column', gap: 2,
+                  }}
+                >
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{q.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: isSelected ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                    {q.type}
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
           <div style={{
@@ -145,22 +179,23 @@ export default function CBIRAnalysis() {
               </div>
               <div>
                 <span style={{ color: 'var(--color-text-muted)' }}>Dimension:</span>{' '}
-                <strong style={{ color: 'var(--color-accent)' }}>{selectedQuery.embeddingDim} floats</strong>
+                <strong className="mono-val" style={{ color: 'var(--color-accent)' }}>{selectedQuery.embeddingDim} floats</strong>
               </div>
               <div>
                 <span style={{ color: 'var(--color-text-muted)' }}>Mean Similarity:</span>{' '}
-                <strong style={{ color: 'var(--color-success)' }}>{(selectedQuery.avgSimilarity * 100).toFixed(1)}%</strong>
+                <strong className="mono-val" style={{ color: 'var(--color-success)' }}>{(selectedQuery.avgSimilarity * 100).toFixed(1)}%</strong>
               </div>
               <div>
                 <span style={{ color: 'var(--color-text-muted)' }}>Clones Detected:</span>{' '}
-                <strong style={{ color: 'var(--color-warning)' }}>{selectedQuery.resultsCount} matches</strong>
+                <strong className="mono-val" style={{ color: 'var(--color-warning)' }}>{selectedQuery.resultsCount} matches</strong>
               </div>
             </div>
 
             <div style={{ marginTop: 14 }}>
-              <label style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: 6 }}>
-                Cosine Similarity Cutoff Threshold: <strong>{(metricThreshold * 100).toFixed(0)}%</strong>
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Cosine Similarity Cutoff Threshold:</span>
+                <strong className="mono-val" style={{ color: 'var(--color-primary)' }}>{(metricThreshold * 100).toFixed(0)}%</strong>
+              </div>
               <input
                 type="range"
                 min="0.70"
@@ -168,7 +203,7 @@ export default function CBIRAnalysis() {
                 step="0.01"
                 value={metricThreshold}
                 onChange={e => setMetricThreshold(parseFloat(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--color-primary)' }}
+                style={{ width: '100%', accentColor: 'var(--color-primary)', cursor: 'pointer' }}
               />
             </div>
           </div>
@@ -177,73 +212,133 @@ export default function CBIRAnalysis() {
         {/* Feature Extractor Benchmark Radar */}
         <div className="card">
           <div className="section-header">
-            <div className="section-title">Descriptor Performance Comparison</div>
-            <div className="section-subtitle">Accuracy vs Index Search Speed across feature types</div>
+            <div>
+              <div className="section-title">Descriptor Architecture Benchmark</div>
+              <div className="section-subtitle">Retrieval accuracy vs index search speed across feature representations</div>
+            </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <RadarChart cx="50%" cy="50%" outerRadius={90} data={FEATURE_DIMENSION_STATS}>
-              <PolarGrid stroke="rgba(255,255,255,0.08)" />
+              <PolarGrid stroke="rgba(255,255,255,0.06)" />
               <PolarAngleAxis dataKey="feature" tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <PolarRadiusAxis angle={30} domain={[0, 1]} tick={{ fill: '#64748b', fontSize: 9 }} />
-              <Radar name="Retrieval Accuracy" dataKey="accuracy" stroke="#6366f1" fill="#6366f1" fillOpacity={0.4} />
-              <Radar name="Search Speed" dataKey="retrievalSpeed" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.25} />
-              <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-              <Tooltip contentStyle={{ background: '#111827', borderColor: 'var(--color-border)', borderRadius: 6, fontSize: '0.8rem' }} />
+              <Radar name="Retrieval Accuracy" dataKey="accuracy" stroke="#6366f1" fill="#6366f1" fillOpacity={0.35} />
+              <Radar name="Search Speed" dataKey="retrievalSpeed" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.2} />
+              <Legend wrapperStyle={{ fontSize: '0.78rem' }} />
+              <Tooltip contentStyle={{ background: '#0f172a', borderColor: 'var(--color-border)', borderRadius: 6, fontSize: '0.8rem' }} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Retrieved Nearest Neighbors Table */}
-      <div className="card">
-        <div className="section-header">
-          <div className="section-title">Top Nearest Neighbors in Image Feature Space (k-NN Query)</div>
-          <div className="section-subtitle">
-            Showing {filteredMatches.length} matching multimedia assets meeting similarity criteria
+      {/* Retrieved Nearest Neighbors Table + Selected Asset Inspector */}
+      <div className="ba-grid-2">
+        {/* Table of matches */}
+        <div className="card">
+          <div className="section-header">
+            <div>
+              <div className="section-title">Top Nearest Neighbors in Feature Space (k-NN)</div>
+              <div className="section-subtitle">Showing {filteredMatches.length} matching visual assets above {(metricThreshold * 100).toFixed(0)}% threshold</div>
+            </div>
+          </div>
+
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Asset ID</th>
+                  <th>Similarity</th>
+                  <th>Associated Account</th>
+                  <th>Classification</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMatches.map(item => {
+                  const isSelected = inspectedAsset?.docId === item.docId
+                  return (
+                    <tr
+                      key={item.docId}
+                      onClick={() => setInspectedAsset(item)}
+                      style={{
+                        cursor: 'pointer',
+                        background: isSelected ? 'rgba(99,102,241,0.1)' : 'transparent',
+                      }}
+                    >
+                      <td className="mono-val" style={{ color: 'var(--color-primary)', fontWeight: 700 }}>
+                        #{item.rank}
+                      </td>
+                      <td className="mono-val" style={{ color: '#fff' }}>{item.docId}</td>
+                      <td className="mono-val" style={{ color: item.similarity > 0.95 ? 'var(--color-danger)' : 'var(--color-accent)', fontWeight: 700 }}>
+                        {(item.similarity * 100).toFixed(1)}%
+                      </td>
+                      <td>
+                        <span className="mono-val" style={{ color: 'var(--color-accent)' }}>
+                          {item.accountRef}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`label-badge label-badge--${item.classLabel.includes('Bot') || item.classLabel.includes('Campaign') ? 'bot' : 'human'}`}>
+                          {item.classLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
-                <th style={{ padding: '10px 12px' }}>Rank</th>
-                <th style={{ padding: '10px 12px' }}>Asset ID</th>
-                <th style={{ padding: '10px 12px' }}>Perceptual Hash</th>
-                <th style={{ padding: '10px 12px' }}>Cosine Similarity</th>
-                <th style={{ padding: '10px 12px' }}>Euclidean Distance</th>
-                <th style={{ padding: '10px 12px' }}>Associated Account</th>
-                <th style={{ padding: '10px 12px' }}>Classification</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMatches.map(item => (
-                <tr key={item.rank} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-primary)' }}>#{item.rank}</td>
-                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#fff' }}>{item.docId}</td>
-                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#94a3b8' }}>{item.hash}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: item.similarity > 0.95 ? 'var(--color-danger)' : 'var(--color-accent)' }}>
-                    {(item.similarity * 100).toFixed(1)}%
-                  </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)' }}>{item.distance.toFixed(3)}</td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-primary)' }}>{item.accountRef}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{
-                      padding: '3px 8px',
-                      borderRadius: 4,
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      background: item.classLabel.includes('Bot') ? 'rgba(239,68,68,0.15)' : 'var(--color-surface-2)',
-                      color: item.classLabel.includes('Bot') ? 'var(--color-danger)' : 'var(--color-text-muted)',
-                    }}>
-                      {item.classLabel}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Selected Asset Inspection Card */}
+        {inspectedAsset && (
+          <div className="card" style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+            <div className="section-header">
+              <div>
+                <div className="section-title">Visual Clone Forensic Dossier</div>
+                <div className="section-subtitle">Asset details &amp; cross-network association</div>
+              </div>
+              <span className="badge badge-warning">{inspectedAsset.docId}</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.82rem', marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Perceptual Hash (pHash):</span>
+                <span className="mono-val" style={{ color: 'var(--color-accent)' }}>{inspectedAsset.hash}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Cosine Similarity:</span>
+                <span className="mono-val" style={{ color: 'var(--color-danger)', fontWeight: 700 }}>
+                  {(inspectedAsset.similarity * 100).toFixed(2)}%
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Euclidean Distance:</span>
+                <span className="mono-val">{inspectedAsset.distance.toFixed(4)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Associated Handle:</span>
+                <span className="mono-val" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{inspectedAsset.accountRef}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Network Classification:</span>
+                <span className={`label-badge label-badge--${inspectedAsset.classLabel.includes('Bot') || inspectedAsset.classLabel.includes('Campaign') ? 'bot' : 'human'}`}>
+                  {inspectedAsset.classLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Action button to audit that specific account in Account Investigation */}
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+              onClick={() => onNavigate && onNavigate('investigate', { query: inspectedAsset.accountRef.replace('@', '') })}
+            >
+              <UserCheck size={14} />
+              Audit Account ({inspectedAsset.accountRef}) in Dossier
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

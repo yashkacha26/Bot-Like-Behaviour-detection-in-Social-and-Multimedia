@@ -29,6 +29,7 @@ data/raw/*.csv
 data/raw/*.zip
 data/processed/*.pkl
 data/processed/*.parquet
+data/nltk_data/
 
 # ML models (large binary files)
 backend/trained_models/*.pkl

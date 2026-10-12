@@ -3,6 +3,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts'
+import {
+  Video, Search, Play, ShieldAlert, CheckCircle2,
+  ExternalLink, Sparkles, Filter, ChevronRight, UserCheck
+} from 'lucide-react'
 
 const SCENE_CHANGE_TIMELINE = [
   { timestamp: '00:00', shotScore: 0.12, keyframes: 1, sceneType: 'Intro Graphic' },
@@ -21,80 +25,116 @@ const IR_QUERY_BENCHMARKS = [
   { query: 'automated watermark asset detection', model: 'Inverted Postings List', map: 0.87, recallAt10: 0.91, ndcg: 0.89 },
 ]
 
-const RETRIEVED_DOCUMENTS = [
-  { rank: 1, docId: 'VID-DOC-401', score: 0.964, title: 'Automated Token Launch Video Reel #24', matchSnippet: '...promotional token pump coordinated across 34 bot channels with identical visual cuts...', author: '@token_alpha_bot', duration: '0:34', category: 'High-Risk Bot Video' },
-  { rank: 2, docId: 'VID-DOC-182', score: 0.912, title: 'Synthetic Voice Over Political Narrative #09', matchSnippet: '...generated speech audio synchronized with stock news video loop, repeated word frequency...', author: '@daily_wire_news_alt', duration: '1:12', category: 'Synthetic Media' },
-  { rank: 3, docId: 'VID-DOC-704', score: 0.875, title: 'Viral Reaction Clip Mirror Batch #12', matchSnippet: '...duplicate visual keyframes detected with shifted color saturation and watermarked audio...', author: '@mirror_stream_hub', duration: '0:45', category: 'Clone Mirroring' },
-  { rank: 4, docId: 'VID-DOC-029', score: 0.821, title: 'Community Tech Discussion Highlights', matchSnippet: '...organic interview with natural speech pauses and varied keyframe color histograms...', author: '@tech_today_real', duration: '3:20', category: 'Organic Video' },
+const ALL_RETRIEVED_DOCUMENTS = [
+  { rank: 1, docId: 'VID-DOC-401', score: 0.964, title: 'Automated Token Launch Video Reel #24', matchSnippet: 'Promotional token pump coordinated across 34 bot channels with identical visual cuts and synced speech audio...', author: '@crypto_bot_14', duration: '0:34', category: 'High-Risk Bot Video', tags: ['crypto', 'token', 'pump', 'automated'] },
+  { rank: 2, docId: 'VID-DOC-182', score: 0.912, title: 'Synthetic Voice Over Political Narrative #09', matchSnippet: 'Generated speech audio synchronized with stock news video loop, repeated token frequency and script re-use...', author: '@daily_wire_news', duration: '1:12', category: 'Synthetic Media', tags: ['synthetic', 'voice', 'political', 'disinformation'] },
+  { rank: 3, docId: 'VID-DOC-704', score: 0.875, title: 'Viral Reaction Clip Mirror Batch #12', matchSnippet: 'Duplicate visual keyframes detected with shifted color saturation and repeated automated watermarks...', author: '@mirror_stream_hub', duration: '0:45', category: 'Clone Mirroring', tags: ['mirror', 'watermark', 'clone', 'duplicate'] },
+  { rank: 4, docId: 'VID-DOC-029', score: 0.821, title: 'Community Tech Discussion Highlights', matchSnippet: 'Organic interview with natural speech pauses, diverse frame histograms and verified human speaker track...', author: '@alex_johnson', duration: '3:20', category: 'Organic Video', tags: ['tech', 'discussion', 'organic', 'interview'] },
+  { rank: 5, docId: 'VID-DOC-933', score: 0.798, title: 'Flash Giveaways Video Campaign Feed', matchSnippet: 'Synthetic text banners promising immediate crypto airdrop tokens with rapid visual transitions...', author: '@promo_daily_x', duration: '0:22', category: 'High-Risk Bot Video', tags: ['giveaway', 'airdrop', 'crypto', 'spam'] },
 ]
 
-export default function VideoContentIRAnalysis() {
-  const [activeSearch, setActiveSearch] = useState('coordinated crypto spam narrative')
-  const [selectedResult, setSelectedResult] = useState(RETRIEVED_DOCUMENTS[0])
+export default function VideoContentIRAnalysis({ onNavigate }) {
+  const [activeSearch, setActiveSearch] = useState('crypto spam narrative')
+  const [documents, setDocuments] = useState(ALL_RETRIEVED_DOCUMENTS)
+  const [selectedResult, setSelectedResult] = useState(ALL_RETRIEVED_DOCUMENTS[0])
+  const [searching, setSearching] = useState(false)
+
+  const handleExecuteQuery = (searchQuery) => {
+    const q = searchQuery !== undefined ? searchQuery : activeSearch
+    setSearching(true)
+    setTimeout(() => {
+      const qLower = q.toLowerCase().trim()
+      let filtered = ALL_RETRIEVED_DOCUMENTS
+      if (qLower) {
+        filtered = ALL_RETRIEVED_DOCUMENTS.filter(doc =>
+          doc.title.toLowerCase().includes(qLower) ||
+          doc.matchSnippet.toLowerCase().includes(qLower) ||
+          doc.category.toLowerCase().includes(qLower) ||
+          doc.author.toLowerCase().includes(qLower) ||
+          doc.tags.some(t => t.includes(qLower) || qLower.includes(t))
+        )
+      }
+      setDocuments(filtered)
+      if (filtered.length > 0) {
+        setSelectedResult(filtered[0])
+      }
+      setSearching(false)
+    }, 200)
+  }
+
+  const handlePresetClick = (preset) => {
+    setActiveSearch(preset)
+    handleExecuteQuery(preset)
+  }
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <span className="badge badge-accent" style={{ marginBottom: 8 }}>Multimedia & IR Module</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Video Content Analysis & Information Retrieval</h1>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            Shot boundary detection, keyframe summarization, inverted index querying, and neural ranking for multimedia corpora.
+          <div className="page-header__kicker">
+            <span className="badge badge-accent">Multimedia Surveillance</span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>HYBRID IR ENGINE</span>
+          </div>
+          <h1>Video Content Forensics &amp; Information Retrieval</h1>
+          <p>
+            Shot boundary histogram variance, keyframe temporal segmentation, inverted index retrieval, and neural cross-encoder document ranking.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <span className="stat-pill" style={{ background: 'var(--color-surface-2)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
-            IR Model: <strong>Hybrid Dense + BM25</strong>
-          </span>
-          <span className="stat-pill" style={{ background: 'rgba(34,211,238,0.15)', color: 'var(--color-accent)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(34,211,238,0.3)', fontSize: '0.82rem', fontWeight: 600 }}>
-            Indexed Documents: 45,200
-          </span>
+          <div className="telemetry-indicator">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem' }}>Engine: <strong>Hybrid Dense + BM25</strong></span>
+          </div>
+          <div className="telemetry-indicator">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: 'var(--color-accent)' }}>Index Size: 45,200 Clips</span>
+          </div>
         </div>
       </div>
 
       {/* KPI Stats */}
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 24 }}>
-        <div className="stat-card">
+      <div className="stat-grid" style={{ marginBottom: 24 }}>
+        <div className="stat-card card--accent-cyan">
+          <div className="stat-card__label">Video Streams Evaluated</div>
           <div className="stat-card__value" style={{ color: 'var(--color-accent)' }}>8,420</div>
-          <div className="stat-card__label">Video Streams Analyzed</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Temporal shot & keyframe extraction</div>
+          <div className="stat-card__sub">Temporal keyframe decomposition</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card card--accent-primary">
+          <div className="stat-card__label">NDCG@10 Retrieval Ranking</div>
           <div className="stat-card__value" style={{ color: 'var(--color-primary)' }}>0.932</div>
-          <div className="stat-card__label">Mean NDCG@10 (Retrieval)</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Normalized Discounted Cumulative Gain</div>
+          <div className="stat-card__sub">Discounted cumulative gain</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>96.4%</div>
+        <div className="stat-card card--accent-success">
           <div className="stat-card__label">Shot Boundary Recall</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Color histogram difference thresholding</div>
+          <div className="stat-card__value" style={{ color: 'var(--color-success)' }}>96.4%</div>
+          <div className="stat-card__sub">Color histogram difference cutoff</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card card--accent-warning">
+          <div className="stat-card__label">Mean IR Latency</div>
           <div className="stat-card__value" style={{ color: 'var(--color-warning)' }}>18.2 ms</div>
-          <div className="stat-card__label">IR Query Response Time</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Vector index + inverted postings rank</div>
+          <div className="stat-card__sub">Inverted index posting traversal</div>
         </div>
       </div>
 
-      {/* Video Content Analysis Section: Shot Transition Graph */}
+      {/* Temporal Shot Graph */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="section-header">
-          <div className="section-title">Video Temporal Structure: Shot Boundary & Transition Detection</div>
-          <div className="section-subtitle">Histogram difference scores indicating automated hard cuts and repetitive video assembly</div>
+          <div>
+            <div className="section-title">Video Temporal Structure: Shot Boundary &amp; Transition Detection</div>
+            <div className="section-subtitle">Histogram difference scores indicating automated hard cuts and repetitive video assembly</div>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={230}>
           <AreaChart data={SCENE_CHANGE_TIMELINE}>
             <defs>
               <linearGradient id="colorShot" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <CartesianGrid strokeDasharray="2 2" stroke="rgba(255,255,255,0.04)" vertical={false} />
             <XAxis dataKey="timestamp" tick={{ fill: '#94a3b8', fontSize: 11 }} />
             <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} domain={[0, 1]} />
-            <Tooltip contentStyle={{ background: '#111827', borderColor: 'var(--color-border)', borderRadius: 6, fontSize: '0.8rem' }} />
-            <Area type="monotone" dataKey="shotScore" stroke="#22d3ee" strokeWidth={2} fillOpacity={1} fill="url(#colorShot)" name="Shot Difference Score" />
+            <Tooltip contentStyle={{ background: '#0f172a', borderColor: 'var(--color-border)', borderRadius: 6, fontSize: '0.8rem' }} />
+            <Area type="monotone" dataKey="shotScore" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#colorShot)" name="Shot Difference Score" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -102,113 +142,218 @@ export default function VideoContentIRAnalysis() {
       {/* Information Retrieval (IR) Search Console */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="section-header">
-          <div className="section-title">Information Retrieval (IR) Engine Console</div>
-          <div className="section-subtitle">Search indexed multimedia document corpus using semantic query vectors & inverted index</div>
+          <div>
+            <div className="section-title">Information Retrieval (IR) Multi-Modal Engine</div>
+            <div className="section-subtitle">Search indexed video corpora using lexical inverted postings and dense vector embeddings</div>
+          </div>
+          <span className="badge badge-primary">{documents.length} Matches Found</span>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-          <input
-            type="text"
-            value={activeSearch}
-            onChange={e => setActiveSearch(e.target.value)}
-            placeholder="Enter search terms (e.g., bot campaign, synthetic video)..."
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-surface-2)',
-              border: '1px solid var(--color-border)',
-              color: '#fff',
-              fontSize: '0.85rem',
-            }}
-          />
-          <button
-            style={{
-              padding: '10px 20px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-primary)',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-            }}
-          >
-            Execute IR Query
-          </button>
-        </div>
-
-        {/* Retrieved documents list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {RETRIEVED_DOCUMENTS.map(doc => (
-            <div
-              key={doc.docId}
-              onClick={() => setSelectedResult(doc)}
+        {/* Search Bar Form */}
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleExecuteQuery() }}
+          style={{ display: 'flex', gap: 10, marginBottom: 12 }}
+        >
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+            <input
+              type="text"
+              value={activeSearch}
+              onChange={e => setActiveSearch(e.target.value)}
+              placeholder="Search video corpora (e.g., crypto spam, synthetic voice, watermark, giveaways)..."
               style={{
-                padding: '14px 16px',
+                width: '100%',
+                padding: '9px 14px 9px 36px',
                 borderRadius: 'var(--radius-sm)',
-                background: selectedResult.docId === doc.docId ? 'rgba(99,102,241,0.15)' : 'var(--color-surface-2)',
-                border: selectedResult.docId === doc.docId ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                color: '#fff',
+                fontSize: '0.85rem',
+                outline: 'none',
               }}
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={searching}
+          >
+            <Search size={14} className={searching ? 'spinner' : ''} />
+            {searching ? 'Querying...' : 'Execute IR Query'}
+          </button>
+        </form>
+
+        {/* Quick query preset chips */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontWeight: 600 }}>Quick Queries:</span>
+          {[
+            'crypto spam narrative',
+            'synthetic voice political',
+            'watermark clone mirror',
+            'airdrop giveaway token',
+            'organic tech discussion',
+          ].map(preset => (
+            <button
+              key={preset}
+              type="button"
+              className="tab-btn"
+              onClick={() => handlePresetClick(preset)}
+              style={{ padding: '3px 9px', fontSize: '0.72rem' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', padding: '2px 8px', borderRadius: 4, background: 'rgba(99,102,241,0.2)' }}>
-                    Rank #{doc.rank}
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#fff' }}>{doc.title}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>({doc.docId})</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Duration: {doc.duration}</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-success)' }}>
-                    Relevance: {(doc.score * 100).toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '4px 0 8px 0' }}>{doc.matchSnippet}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                <span>Author: <strong>{doc.author}</strong></span>
-                <span style={{
-                  color: doc.category.includes('Bot') || doc.category.includes('Synthetic') ? 'var(--color-danger)' : 'var(--color-success)',
-                  fontWeight: 600,
-                }}>
-                  {doc.category}
-                </span>
-              </div>
-            </div>
+              "{preset}"
+            </button>
           ))}
+        </div>
+
+        {/* Master-Detail: Retrieved documents list + Inspector Panel */}
+        <div className="ba-grid-2">
+          {/* Document list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {documents.length === 0 ? (
+              <div className="loading-box" style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-sm)' }}>
+                No video documents matched "{activeSearch}". Try another query.
+              </div>
+            ) : (
+              documents.map(doc => {
+                const isSelected = selectedResult?.docId === doc.docId
+                return (
+                  <div
+                    key={doc.docId}
+                    onClick={() => setSelectedResult(doc)}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: isSelected ? 'rgba(99,102,241,0.12)' : 'var(--color-surface-2)',
+                      border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="badge badge-primary" style={{ fontSize: '0.66rem', padding: '1px 6px' }}>
+                          Rank #{doc.rank}
+                        </span>
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#fff' }}>{doc.title}</span>
+                      </div>
+                      <span className="mono-val" style={{ color: 'var(--color-success)', fontSize: '0.8rem', fontWeight: 700 }}>
+                        {(doc.score * 100).toFixed(1)}%
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', margin: '4px 0 6px' }}>
+                      {doc.matchSnippet}
+                    </p>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
+                      <span>Author: <strong style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-mono)' }}>{doc.author}</strong></span>
+                      <span className={`label-badge label-badge--${doc.category.includes('Bot') ? 'bot' : 'human'}`}>
+                        {doc.category}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Selected Document Forensic Inspection Drawer */}
+          {selectedResult && (
+            <div className="card" style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+              <div className="section-header" style={{ marginBottom: 12 }}>
+                <div>
+                  <div className="section-title" style={{ fontSize: '0.9rem' }}>
+                    Document Dossier: {selectedResult.docId}
+                  </div>
+                  <div className="section-subtitle">Inverted index post list verification &amp; source linkage</div>
+                </div>
+                <span className="badge badge-warning">Active Inspection</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.8rem', marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Document Title:</span>
+                  <strong style={{ color: '#fff' }}>{selectedResult.title}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Source Account:</span>
+                  <span className="mono-val" style={{ color: 'var(--color-accent)' }}>{selectedResult.author}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Estimated Duration:</span>
+                  <span className="mono-val">{selectedResult.duration}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Cross-Encoder Relevance:</span>
+                  <span className="mono-val" style={{ color: 'var(--color-success)', fontWeight: 700 }}>
+                    {(selectedResult.score * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>Classification Status:</span>
+                  <span className={`label-badge label-badge--${selectedResult.category.includes('Bot') ? 'bot' : 'human'}`}>
+                    {selectedResult.category}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Extracted Index Posting Tokens:
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {selectedResult.tags.map(t => (
+                    <span key={t} className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Button: Audit Author in Account Dossier */}
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+                onClick={() => onNavigate && onNavigate('investigate', { query: selectedResult.author.replace('@', '') })}
+              >
+                <UserCheck size={14} />
+                Audit Author ({selectedResult.author}) in Account Dossier
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* IR Benchmark Evaluation Table */}
       <div className="card">
         <div className="section-header">
-          <div className="section-title">Information Retrieval Evaluation Metrics</div>
-          <div className="section-subtitle">Mean Average Precision (MAP), Recall@10, and NDCG rankings across query classes</div>
+          <div>
+            <div className="section-title">Information Retrieval Evaluation Benchmarks</div>
+            <div className="section-subtitle">Mean Average Precision (MAP), Recall@10, and NDCG rankings across benchmark queries</div>
+          </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+        <div className="table-wrap">
+          <table className="data-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-text-muted)' }}>
-                <th style={{ padding: '10px 12px' }}>Standard Evaluation Query</th>
-                <th style={{ padding: '10px 12px' }}>Retrieval Architecture</th>
-                <th style={{ padding: '10px 12px' }}>MAP</th>
-                <th style={{ padding: '10px 12px' }}>Recall @ 10</th>
-                <th style={{ padding: '10px 12px' }}>NDCG @ 10</th>
-                <th style={{ padding: '10px 12px' }}>Status</th>
+              <tr>
+                <th>Standard Evaluation Query</th>
+                <th>Retrieval Architecture</th>
+                <th>MAP Score</th>
+                <th>Recall @ 10</th>
+                <th>NDCG @ 10</th>
+                <th>Validation Status</th>
               </tr>
             </thead>
             <tbody>
               {IR_QUERY_BENCHMARKS.map((b, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#fff' }}>"{b.query}"</td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)' }}>{b.model}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-primary)' }}>{b.map.toFixed(2)}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-accent)' }}>{b.recallAt10.toFixed(2)}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-success)' }}>{b.ndcg.toFixed(2)}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 600, background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)' }}>
+                <tr key={i}>
+                  <td style={{ fontWeight: 600, color: '#fff' }}>"{b.query}"</td>
+                  <td style={{ color: 'var(--color-text-muted)' }}>{b.model}</td>
+                  <td className="mono-val" style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{b.map.toFixed(2)}</td>
+                  <td className="mono-val" style={{ color: 'var(--color-accent)', fontWeight: 700 }}>{b.recallAt10.toFixed(2)}</td>
+                  <td className="mono-val" style={{ color: 'var(--color-success)', fontWeight: 700 }}>{b.ndcg.toFixed(2)}</td>
+                  <td>
+                    <span className="badge badge-success">
                       Optimal
                     </span>
                   </td>

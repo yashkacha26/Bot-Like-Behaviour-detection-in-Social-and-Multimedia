@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ScatterChart, Scatter, AreaChart, Area,
-  Cell, RadialBarChart, RadialBar,
 } from 'recharts'
+import {
+  Activity, Users, Bot, ShieldAlert, ChevronRight, Download,
+  Search, Sliders, RefreshCw
+} from 'lucide-react'
 import api from '../api/client'
 
 // ─── colour palette ──────────────────────────────────────────────────────────
 const BOT_COLOR   = '#ef4444'
 const HUMAN_COLOR = '#22d3ee'
-const BOT_SOFT    = 'rgba(239,68,68,0.18)'
-const HUMAN_SOFT  = 'rgba(34,211,238,0.18)'
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function fmt(val, format) {
@@ -21,9 +22,9 @@ function fmt(val, format) {
 }
 
 function useData(endpoint) {
-  const [data, setData]     = useState(null)
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]   = useState(null)
+  const [error, setError]     = useState(null)
   const load = useCallback(() => {
     setLoading(true); setError(null)
     api.get(endpoint)
@@ -36,11 +37,14 @@ function useData(endpoint) {
 }
 
 // ─── sub-components ──────────────────────────────────────────────────────────
-function SectionHeader({ title, subtitle }) {
+function SectionHeader({ title, subtitle, rightContent }) {
   return (
     <div className="section-header">
-      <h2 className="section-title">{title}</h2>
-      {subtitle && <p className="section-subtitle">{subtitle}</p>}
+      <div>
+        <h2 className="section-title">{title}</h2>
+        {subtitle && <p className="section-subtitle">{subtitle}</p>}
+      </div>
+      {rightContent}
     </div>
   )
 }
@@ -58,7 +62,7 @@ function LoadingBox() {
   return (
     <div className="loading-box">
       <div className="spinner" />
-      <span>Loading…</span>
+      <span>Loading behavioral intelligence metrics…</span>
     </div>
   )
 }
@@ -67,7 +71,7 @@ function ErrorBox({ msg, retry }) {
   return (
     <div className="error-box">
       <span>{msg}</span>
-      {retry && <button className="btn-retry" onClick={retry}>Retry</button>}
+      {retry && <button className="btn btn-secondary btn-sm" onClick={retry}>Retry</button>}
     </div>
   )
 }
@@ -79,7 +83,7 @@ function CustomTooltip({ active, payload, label }) {
     <div className="recharts-custom-tooltip">
       <p className="recharts-custom-tooltip__label">{label}</p>
       {payload.map(p => (
-        <p key={p.name} style={{ color: p.color }}>
+        <p key={p.name} style={{ color: p.color, fontSize: '0.8rem', marginTop: 2 }}>
           {p.name}: <strong>{typeof p.value === 'number' ? p.value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : p.value}</strong>
         </p>
       ))}
@@ -94,51 +98,102 @@ function FeatureSummaryCards() {
   if (error)   return <ErrorBox msg={error} />
   return (
     <div className="stat-grid">
-      <StatCard label="Total Features Formulated" value={data.total_features}   color="#6366f1" />
-      <StatCard label="Labeled Account Population" value={data.labeled_accounts} color="#f59e0b" />
-      <StatCard label="Identified Bot Entities"    value={data.bot_count}        color={BOT_COLOR} />
-      <StatCard label="Verified Human Users"       value={data.human_count}      color={HUMAN_COLOR} />
+      <StatCard label="Engineered Features"       value={data.total_features}   color="#6366f1" />
+      <StatCard label="Audited Account Cohort"    value={data.labeled_accounts?.toLocaleString()} color="#f59e0b" />
+      <StatCard label="Identified Bot Entities"   value={data.bot_count?.toLocaleString()}        color={BOT_COLOR} />
+      <StatCard label="Verified Human Users"      value={data.human_count?.toLocaleString()}      color={HUMAN_COLOR} />
     </div>
   )
 }
 
-// ─── Section 2: Feature stats table ──────────────────────────────────────────
+// ─── Section 2: Feature stats table with search ──────────────────────────────
 function FeatureStatsTable() {
   const { data, loading, error } = useData('/features/stats')
+  const [filterQuery, setFilterQuery] = useState('')
+
   if (loading) return <LoadingBox />
   if (error)   return <ErrorBox msg={error} />
+
+  const filtered = (data || []).filter(r =>
+    r.feature.toLowerCase().includes(filterQuery.toLowerCase())
+  )
+
+  const handleExportFeatures = () => {
+    const csvContent = 'data:text/csv;charset=utf-8,'
+      + ['Feature,Bot Mean,Human Mean,Bot Median,Human Median,Bot Std,Human Std']
+        .concat(filtered.map(r => `${r.feature},${r.bot_mean},${r.human_mean},${r.bot_median},${r.human_median},${r.bot_std},${r.human_std}`))
+        .join('\n')
+    const encoded = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encoded)
+    link.setAttribute('download', `feature_statistics_${Date.now()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
-    <div className="table-wrap">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th style={{ color: BOT_COLOR }}>Bot Mean</th>
-            <th style={{ color: HUMAN_COLOR }}>Human Mean</th>
-            <th style={{ color: BOT_COLOR }}>Bot Median</th>
-            <th style={{ color: HUMAN_COLOR }}>Human Median</th>
-            <th style={{ color: BOT_COLOR }}>Bot Std</th>
-            <th style={{ color: HUMAN_COLOR }}>Human Std</th>
-            <th>Bot N</th>
-            <th>Human N</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.feature}>
-              <td className="feature-name">{row.feature}</td>
-              <td style={{ color: BOT_COLOR }}>{fmt(row.bot_mean, 'decimal')}</td>
-              <td style={{ color: HUMAN_COLOR }}>{fmt(row.human_mean, 'decimal')}</td>
-              <td style={{ color: BOT_COLOR }}>{fmt(row.bot_median, 'decimal')}</td>
-              <td style={{ color: HUMAN_COLOR }}>{fmt(row.human_median, 'decimal')}</td>
-              <td>{fmt(row.bot_std, 'decimal')}</td>
-              <td>{fmt(row.human_std, 'decimal')}</td>
-              <td>{row.bot_n}</td>
-              <td>{row.human_n}</td>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Search features..."
+            value={filterQuery}
+            onChange={e => setFilterQuery(e.target.value)}
+            style={{
+              background: 'var(--color-surface-2)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px 6px 30px',
+              fontSize: '0.78rem',
+              color: 'var(--color-text)',
+              width: 220,
+              outline: 'none',
+            }}
+          />
+        </div>
+        <button className="btn btn-secondary btn-sm" onClick={handleExportFeatures}>
+          <Download size={13} />
+          Export Feature Stats CSV
+        </button>
+      </div>
+
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Feature Name</th>
+              <th style={{ color: BOT_COLOR }}>Bot Mean</th>
+              <th style={{ color: HUMAN_COLOR }}>Human Mean</th>
+              <th style={{ color: BOT_COLOR }}>Bot Median</th>
+              <th style={{ color: HUMAN_COLOR }}>Human Median</th>
+              <th style={{ color: BOT_COLOR }}>Bot Std</th>
+              <th style={{ color: HUMAN_COLOR }}>Human Std</th>
+              <th>Bot Samples</th>
+              <th>Human Samples</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filtered.map(row => (
+              <tr key={row.feature}>
+                <td className="feature-name" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text)' }}>
+                  {row.feature}
+                </td>
+                <td style={{ color: BOT_COLOR, fontFamily: 'var(--font-mono)' }}>{fmt(row.bot_mean, 'decimal')}</td>
+                <td style={{ color: HUMAN_COLOR, fontFamily: 'var(--font-mono)' }}>{fmt(row.human_mean, 'decimal')}</td>
+                <td style={{ color: BOT_COLOR, fontFamily: 'var(--font-mono)' }}>{fmt(row.bot_median, 'decimal')}</td>
+                <td style={{ color: HUMAN_COLOR, fontFamily: 'var(--font-mono)' }}>{fmt(row.human_median, 'decimal')}</td>
+                <td style={{ fontFamily: 'var(--font-mono)' }}>{fmt(row.bot_std, 'decimal')}</td>
+                <td style={{ fontFamily: 'var(--font-mono)' }}>{fmt(row.human_std, 'decimal')}</td>
+                <td className="mono-val">{row.bot_n}</td>
+                <td className="mono-val">{row.human_n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -170,7 +225,7 @@ function BooleanRatesChart() {
   if (loading) return <LoadingBox />
   if (error)   return <ErrorBox msg={error} />
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={340}>
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 30, left: 110, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
         <XAxis type="number" domain={[0, 100]} tickFormatter={v => v + '%'} tick={{ fill: '#94a3b8', fontSize: 11 }} />
@@ -195,7 +250,6 @@ function ScoreDistributions() {
   const botBins   = dist.bot   || []
   const humanBins = dist.human || []
 
-  // merge into single array for recharts
   const merged = botBins.map((b, i) => ({
     bin: `${b.bin_start}–${b.bin_end}`,
     bot:   b.count,
@@ -204,7 +258,7 @@ function ScoreDistributions() {
 
   return (
     <div>
-      <div className="tab-row">
+      <div className="tab-row" style={{ marginBottom: 16 }}>
         {['suspicion_score', 'activity_score'].map(k => (
           <button
             key={k}
@@ -260,8 +314,8 @@ function AccountTierChart() {
   )
 }
 
-// ─── Section 7: Top suspicious accounts table ─────────────────────────────────
-function TopSuspiciousTable() {
+// ─── Section 7: Top suspicious accounts table with Working Audit Buttons ──────
+function TopSuspiciousTable({ onNavigate }) {
   const { data, loading, error } = useData('/behaviour/top-suspicious?n=15')
   if (loading) return <LoadingBox />
   if (error)   return <ErrorBox msg={error} />
@@ -270,31 +324,49 @@ function TopSuspiciousTable() {
       <table className="data-table">
         <thead>
           <tr>
-            <th>#</th>
+            <th>Rank</th>
             <th>Screen Name</th>
-            <th>Label</th>
-            <th style={{ color: BOT_COLOR }}>Suspicion ↑</th>
-            <th>Activity</th>
+            <th>Class Label</th>
+            <th style={{ color: BOT_COLOR }}>Suspicion Index</th>
+            <th>Activity Score</th>
             <th>Followers</th>
             <th>Following</th>
             <th>Tweets/Day</th>
             <th>FF Ratio</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row, i) => (
             <tr key={row.user_id || i}>
-              <td style={{ color: '#64748b', fontWeight: 600 }}>{i + 1}</td>
-              <td className="feature-name">@{row.screen_name || '—'}</td>
+              <td style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+                #{String(i + 1).padStart(2, '0')}
+              </td>
+              <td className="feature-name" style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)', fontWeight: 600 }}>
+                @{row.screen_name || row.user_id || '—'}
+              </td>
               <td>
                 <span className={`label-badge label-badge--${row.label}`}>{row.label || '?'}</span>
               </td>
-              <td style={{ color: BOT_COLOR, fontWeight: 700 }}>{fmt(row.suspicion_score, 'decimal')}</td>
-              <td style={{ color: HUMAN_COLOR }}>{fmt(row.activity_score, 'decimal')}</td>
-              <td>{fmt(row.followers_count)}</td>
-              <td>{fmt(row.friends_count)}</td>
-              <td>{fmt(row.tweets_per_day, 'decimal')}</td>
-              <td>{fmt(row.ff_ratio, 'decimal')}</td>
+              <td style={{ color: BOT_COLOR, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                {fmt(row.suspicion_score, 'decimal')}
+              </td>
+              <td style={{ color: HUMAN_COLOR, fontFamily: 'var(--font-mono)' }}>{fmt(row.activity_score, 'decimal')}</td>
+              <td className="mono-val">{fmt(row.followers_count)}</td>
+              <td className="mono-val">{fmt(row.friends_count)}</td>
+              <td className="mono-val">{fmt(row.tweets_per_day, 'decimal')}</td>
+              <td className="mono-val">{fmt(row.ff_ratio, 'decimal')}</td>
+              <td>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => onNavigate && onNavigate('investigate', { query: row.screen_name || row.user_id })}
+                  title={`Open forensic audit for @${row.screen_name || row.user_id}`}
+                  style={{ padding: '3px 8px', fontSize: '0.72rem', gap: 4 }}
+                >
+                  Audit
+                  <ChevronRight size={12} />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -303,20 +375,20 @@ function TopSuspiciousTable() {
   )
 }
 
-// ─── Section 8: Scatter plot with feature selectors ──────────────────────────
+// ─── Section 8: Scatter plot with feature selectors & CSV export ──────────────
 const SCATTER_FEATURES = [
-  { value: 'ff_ratio',           label: 'FF Ratio' },
+  { value: 'ff_ratio',           label: 'Follower / Following Ratio' },
   { value: 'tweets_per_day',     label: 'Tweets / Day' },
   { value: 'favourites_per_day', label: 'Favourites / Day' },
   { value: 'suspicion_score',    label: 'Suspicion Score' },
   { value: 'activity_score',     label: 'Activity Score' },
-  { value: 'account_age_days',   label: 'Account Age (days)' },
-  { value: 'followers_count',    label: 'Followers' },
-  { value: 'friends_count',      label: 'Following' },
+  { value: 'account_age_days',   label: 'Account Age (Days)' },
+  { value: 'followers_count',    label: 'Followers Count' },
+  { value: 'friends_count',      label: 'Following Count' },
   { value: 'description_length', label: 'Description Length' },
 ]
 
-function ScatterSection() {
+function ScatterSection({ onNavigate }) {
   const [xFeat, setXFeat] = useState('ff_ratio')
   const [yFeat, setYFeat] = useState('tweets_per_day')
   const endpoint = `/behaviour/scatter?x=${xFeat}&y=${yFeat}&max_points=300`
@@ -325,22 +397,45 @@ function ScatterSection() {
   const botPoints   = (data || []).filter(d => d.label === 'bot')
   const humanPoints = (data || []).filter(d => d.label === 'human')
 
+  const handleExportScatter = () => {
+    if (!data?.length) return
+    const csvContent = 'data:text/csv;charset=utf-8,'
+      + [`Account,Label,${xFeat},${yFeat}`]
+        .concat(data.map(d => `${d.name || d.user_id || 'unknown'},${d.label},${d.x},${d.y}`))
+        .join('\n')
+    const encoded = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encoded)
+    link.setAttribute('download', `scatter_${xFeat}_vs_${yFeat}_${Date.now()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div>
-      <div className="scatter-controls">
-        <div className="scatter-select-wrap">
-          <label className="scatter-label">X Axis</label>
-          <select className="scatter-select" value={xFeat} onChange={e => setXFeat(e.target.value)}>
-            {SCATTER_FEATURES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
+      <div className="scatter-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          <div className="scatter-select-wrap">
+            <label className="scatter-label">X Axis Dimension</label>
+            <select className="scatter-select" value={xFeat} onChange={e => setXFeat(e.target.value)}>
+              {SCATTER_FEATURES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div className="scatter-select-wrap">
+            <label className="scatter-label">Y Axis Dimension</label>
+            <select className="scatter-select" value={yFeat} onChange={e => setYFeat(e.target.value)}>
+              {SCATTER_FEATURES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="scatter-select-wrap">
-          <label className="scatter-label">Y Axis</label>
-          <select className="scatter-select" value={yFeat} onChange={e => setYFeat(e.target.value)}>
-            {SCATTER_FEATURES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-        </div>
+
+        <button className="btn btn-secondary btn-sm" onClick={handleExportScatter} disabled={!data?.length}>
+          <Download size={13} />
+          Export Scatter CSV
+        </button>
       </div>
+
       {loading ? <LoadingBox /> : error ? <ErrorBox msg={error} retry={reload} /> : (
         <ResponsiveContainer width="100%" height={340}>
           <ScatterChart margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
@@ -359,13 +454,36 @@ function ScatterSection() {
                     </p>
                     <p>{xFeat}: <strong>{d?.x}</strong></p>
                     <p>{yFeat}: <strong>{d?.y}</strong></p>
+                    {d?.name && onNavigate && (
+                      <p style={{ fontSize: '0.7rem', color: 'var(--color-accent)', marginTop: 4 }}>
+                        Click to audit in dossier
+                      </p>
+                    )}
                   </div>
                 )
               }}
             />
             <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 12 }} />
-            <Scatter name="Bot"   data={botPoints}   fill={BOT_COLOR}   fillOpacity={0.7} />
-            <Scatter name="Human" data={humanPoints} fill={HUMAN_COLOR} fillOpacity={0.7} />
+            <Scatter
+              name="Bot"
+              data={botPoints}
+              fill={BOT_COLOR}
+              fillOpacity={0.7}
+              onClick={(e) => {
+                if (e?.name && onNavigate) onNavigate('investigate', { query: e.name })
+              }}
+              style={{ cursor: 'pointer' }}
+            />
+            <Scatter
+              name="Human"
+              data={humanPoints}
+              fill={HUMAN_COLOR}
+              fillOpacity={0.7}
+              onClick={(e) => {
+                if (e?.name && onNavigate) onNavigate('investigate', { query: e.name })
+              }}
+              style={{ cursor: 'pointer' }}
+            />
           </ScatterChart>
         </ResponsiveContainer>
       )}
@@ -374,14 +492,19 @@ function ScatterSection() {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function BehaviourAnalytics() {
+export default function BehaviourAnalytics({ onNavigate }) {
   return (
     <div>
       <div className="page-header">
-        <span className="badge badge-primary" style={{ marginBottom: 8 }}>Behavioural Intelligence</span>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '4px 0' }}>Customer & User Behaviour Analytics</h1>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-          Statistical profiling of temporal activity patterns, engagement burstiness, follow ratios, and composite bot likelihood indices.
+        <div className="page-header__kicker">
+          <span className="badge badge-primary">Temporal Profiling</span>
+          <span style={{ fontSize: '0.74rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+            PHASE 3 FEATURE EXTRACTION
+          </span>
+        </div>
+        <h1>Behavioral Dynamics &amp; Interaction Profiling</h1>
+        <p>
+          Statistical profiling of temporal activity patterns, posting velocity burstiness, following ratios, and composite entity risk indices.
         </p>
       </div>
 
@@ -418,7 +541,7 @@ export default function BehaviourAnalytics() {
       {/* Scatter plot */}
       <section className="ba-section card">
         <SectionHeader title="Feature Scatter Plot" subtitle="Select any two features to visualise bot vs human separation" />
-        <ScatterSection />
+        <ScatterSection onNavigate={onNavigate} />
       </section>
 
       {/* Feature stats table */}
@@ -430,7 +553,7 @@ export default function BehaviourAnalytics() {
       {/* Top suspicious */}
       <section className="ba-section card">
         <SectionHeader title="Top Suspicious Accounts" subtitle="Accounts ranked by composite bot-suspicion score (higher = more bot-like)" />
-        <TopSuspiciousTable />
+        <TopSuspiciousTable onNavigate={onNavigate} />
       </section>
     </div>
   )
